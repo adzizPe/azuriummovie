@@ -31,7 +31,7 @@ const el = {
 };
 
 function endpoint(path, query = {}) {
-  const url = new URL(`${API_BASE}/${path}`);
+  const url = new URL(`${API_BASE}/${path}`, window.location.origin);
   Object.entries(query).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== "") url.searchParams.set(key, value);
   });
