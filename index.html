@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#07120f">
+  <title>OzancicakMovie — Temukan tontonanmu</title>
+  <meta name="description" content="Katalog film dan serial dengan tampilan modern.">
+  <link rel="icon" type="image/png" sizes="94x94" href="https://img.icons8.com/3d-fluency/94/melting-face-2.png">
+  <link rel="apple-touch-icon" href="https://img.icons8.com/3d-fluency/94/melting-face-2.png">
+  <link rel="preconnect" href="https://pbcdn.aoneroom.com">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="OzancicakMovie beranda">
+      <img class="brand-logo" src="https://img.icons8.com/3d-fluency/94/melting-face-2.png" alt="" width="38" height="38">
+      <span>OZANCICAKMOVIE</span>
+    </a>
+
+    <nav class="main-nav" aria-label="Kategori utama">
+      <button class="nav-link active" data-endpoint="movies"><span class="nav-icon" aria-hidden="true">▶</span><span>Film</span></button>
+      <button class="nav-link" data-endpoint="tv"><span class="nav-icon" aria-hidden="true">▣</span><span>Serial</span></button>
+      <button class="nav-link" data-endpoint="animation"><span class="nav-icon" aria-hidden="true">✦</span><span>Animasi</span></button>
+      <button class="nav-link" data-endpoint="kids"><span class="nav-icon" aria-hidden="true">☺</span><span>Anak</span></button>
+    </nav>
+
+    <form class="search" id="searchForm" role="search">
+      <button type="button" id="searchToggle" class="search-toggle" aria-label="Buka pencarian" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
+      </button>
+      <input id="searchInput" type="search" placeholder="Cari film atau serial..." autocomplete="off" aria-label="Cari film atau serial">
+      <button type="button" id="clearSearch" class="clear-search" aria-label="Hapus pencarian">×</button>
+    </form>
+  </header>
+
+  <main>
+    <section id="hero" class="hero hero-loading" aria-label="Film pilihan">
+      <div class="hero-art" id="heroArt"></div>
+      <div class="hero-shade"></div>
+      <div class="hero-content">
+        <span class="eyebrow"><i></i> Pilihan hari ini</span>
+        <h1 id="heroTitle">Menyiapkan layar untukmu</h1>
+        <p id="heroMeta" class="hero-meta">Koleksi terbaru sedang dimuat</p>
+        <p id="heroDesc" class="hero-desc">Tunggu sebentar, kami sedang merangkai tontonan yang pas untuk suasana harimu.</p>
+        <div class="hero-actions">
+          <a id="heroPlay" class="button button-primary disabled" href="#">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>
+            Putar sekarang
+          </a>
+          <button id="heroInfo" class="button button-glass" type="button" disabled>Info lengkap</button>
+        </div>
+      </div>
+      <div class="hero-index" aria-hidden="true"><span>01</span><i></i><small>CURATED</small></div>
+    </section>
+
+    <section class="catalog-shell">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow muted">Jelajahi koleksi</span>
+          <h2 id="catalogTitle">Film untukmu</h2>
+        </div>
+        <p id="resultCount" class="result-count" aria-live="polite"></p>
+      </div>
+
+      <div id="status" class="status" aria-live="polite">
+        <span class="loader"></span>
+        <p>Mengambil koleksi terbaru...</p>
+      </div>
+      <div id="catalog" class="catalog"></div>
+
+      <div class="load-more-wrap">
+        <button id="loadMore" class="button button-outline" type="button" hidden>Muat lebih banyak</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand brand-small" href="index.html"><img class="brand-logo" src="https://img.icons8.com/3d-fluency/94/melting-face-2.png" alt="" width="38" height="38"><span>OZANCICAKMOVIE</span></a>
+    <p>Koleksi film untuk menemani setiap suasana.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

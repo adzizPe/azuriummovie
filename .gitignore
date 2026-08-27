@@ -1,0 +1,16 @@
+# Cloudflare local secrets and state
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+.wrangler/
+
+# Dependencies and local tooling
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor-specific settings
+.vscode/
+.idea/
