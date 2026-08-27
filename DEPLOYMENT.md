@@ -1,43 +1,45 @@
-# Deployment OzancicakMovie
+# Deployment OzancicakMovie ke cPanel
 
-Website ini disiapkan untuk Cloudflare Pages dengan custom domain `ozancicak.my.id`.
+Website menggunakan PHP sebagai proxy API. Hosting harus mendukung PHP 8.0 atau
+lebih baru, Apache `mod_rewrite`, dan ekstensi PHP cURL.
 
-## Konfigurasi Pages
+## Berkas yang diunggah
 
-- Framework preset: `None`
-- Production branch: `main`
-- Build command: `exit 0`
-- Build output directory: `.`
-- Root directory: kosongkan
+Unggah isi proyek ke document root domain, biasanya `public_html`. Folder
+`.git`, `.dev.vars`, dan file konfigurasi lokal tidak perlu diunggah.
 
-## Secret yang wajib diatur
+File Cloudflare berikut boleh tidak diunggah karena tidak digunakan oleh cPanel:
 
-Di Cloudflare Pages, buka **Settings > Variables and Secrets**, kemudian buat secret:
+- `functions/`
+- `_routes.json`
 
-```text
-MOVIEBOX_API_BASE
+## Konfigurasi privat
+
+Di cPanel File Manager, aktifkan **Show Hidden Files**, lalu buat file
+`.api-config.php` di document root (sefolder dengan `index.html`). Isinya:
+
+```php
+<?php
+return [
+    'MOVIEBOX_API_BASE' => 'MASUKKAN_ALAMAT_API_MOVIEBOX_DI_SINI',
+];
 ```
 
-Masukkan alamat upstream hanya melalui dashboard Cloudflare. Jangan menuliskan nilainya di repository, `.env`, dokumentasi, commit, atau screenshot publik.
+File `.api-config.php` sudah tercantum dalam `.gitignore` dan akses langsungnya
+diblokir oleh `.htaccess`. Jangan memasukkannya ke repository atau membagikan
+isinya melalui screenshot.
 
-Atur secret yang sama untuk environment **Production** dan **Preview** jika preview deployment juga harus dapat mengambil film.
+## Pengujian
 
-## Custom domain
+1. Buka `https://ozancicak.my.id/api/moviebox/movies?page=1`.
+2. Jika JSON muncul, buka `https://ozancicak.my.id`.
+3. Uji pencarian, halaman detail, pemutar, pilihan resolusi, dan subtitle.
 
-Setelah deployment pertama berhasil, buka **Custom domains > Set up a domain**, lalu masukkan:
+Jika respons menyebut ekstensi cURL belum aktif, buka **Select PHP Version >
+Extensions**, aktifkan `curl`, lalu simpan.
 
-```text
-ozancicak.my.id
-```
+## Domain dan HTTPS
 
-Ikuti instruksi nameserver/DNS dari Cloudflare. Setelah domain aktif, arahkan alamat `*.pages.dev` ke `https://ozancicak.my.id` dengan Bulk Redirect `301` agar pengunjung selalu menggunakan domain utama.
-
-## Pengembangan lokal
-
-Gunakan Wrangler Pages, bukan Live Server biasa, karena route `/api/moviebox/*` memerlukan Pages Functions:
-
-```text
-npx wrangler pages dev .
-```
-
-Buat `.dev.vars` lokal berisi `MOVIEBOX_API_BASE`, tetapi jangan pernah memasukkan file tersebut ke Git. File itu sudah dilindungi oleh `.gitignore`.
+Arahkan nameserver domain ke nameserver hosting atau buat DNS `A` menuju IP
+hosting sesuai petunjuk penyedia cPanel. Setelah DNS aktif, jalankan **SSL/TLS
+Status > Run AutoSSL** agar website memakai HTTPS.

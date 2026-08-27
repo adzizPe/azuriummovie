@@ -1,0 +1,7 @@
+Options -Indexes
+
+# File ini berisi konfigurasi privat saat website dipasang di cPanel.
+<Files ".api-config.php">
+  Require all denied
+</Files>
+

@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# /api/moviebox/movies -> index.php?endpoint=movies
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z]+?)/?$ index.php?endpoint=$1 [QSA,L,NC]
+

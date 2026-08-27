@@ -5,6 +5,9 @@
 .env.*
 .wrangler/
 
+# Konfigurasi rahasia untuk hosting cPanel (dibuat manual di server)
+.api-config.php
+
 # Dependencies and local tooling
 node_modules/
 .DS_Store
