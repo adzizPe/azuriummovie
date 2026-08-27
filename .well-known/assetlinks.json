@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "id.my.ozancicak.movie",
+      "sha256_cert_fingerprints": [
+        "0C:41:EE:8C:F2:66:6D:41:F3:91:E0:48:7C:13:CC:28:54:DE:9B:B5:BE:53:10:77:4B:9F:29:28:07:F8:97:60"
+      ]
+    }
+  }
+]

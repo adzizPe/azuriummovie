@@ -4,11 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050b0a">
+  <meta name="application-name" content="OzancicakMovie">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="referrer" content="no-referrer">
   <title>Menonton — OzancicakMovie</title>
-  <link rel="icon" type="image/png" sizes="94x94" href="https://img.icons8.com/3d-fluency/94/melting-face-2.png">
-  <link rel="apple-touch-icon" href="https://img.icons8.com/3d-fluency/94/melting-face-2.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body class="watch-page">
   <div class="ambient ambient-one"></div>
@@ -40,10 +44,16 @@
         <div>
           <span class="live-dot"></span>
           <span id="episodeNow">Film</span>
+          <small id="sourceStatus" class="source-status" aria-live="polite">Menyiapkan sumber...</small>
         </div>
         <label class="quality-control">Kualitas
           <select id="qualitySelect" disabled><option>Otomatis</option></select>
         </label>
+      </div>
+      <div id="episodeActions" class="episode-actions" hidden>
+        <button id="previousEpisode" type="button">&larr; Sebelumnya</button>
+        <button id="autoplayToggle" type="button" aria-pressed="true">Putar otomatis: Aktif</button>
+        <button id="nextEpisode" type="button">Berikutnya &rarr;</button>
       </div>
     </section>
 
@@ -52,6 +62,10 @@
         <div class="detail-topline">
           <span id="detailType" class="pill">FILM</span>
           <span id="detailRating" class="rating">★ —</span>
+          <button id="watchFavorite" class="watch-favorite" type="button" aria-label="Tambahkan ke favorit">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S4 16 4 9.6A4.1 4.1 0 0 1 11.1 6.8L12 8l.9-1.2A4.1 4.1 0 0 1 20 9.6c0 6.4-8 10.9-8 10.9Z"/></svg>
+            <span>Favorit</span>
+          </button>
         </div>
         <h1 id="detailTitle">Memuat judul...</h1>
         <p id="detailMeta" class="detail-meta"></p>
@@ -78,6 +92,8 @@
     </section>
   </main>
 
-  <script src="watch.js?v=2"></script>
+  <script src="storage.js?v=1"></script>
+  <script src="watch.js?v=4"></script>
+  <script src="pwa.js?v=1"></script>
 </body>
 </html>

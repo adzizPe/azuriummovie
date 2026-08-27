@@ -4,12 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#07120f">
+  <meta name="application-name" content="OzancicakMovie">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OzanMovie">
   <title>OzancicakMovie — Temukan tontonanmu</title>
   <meta name="description" content="Katalog film dan serial dengan tampilan modern.">
-  <link rel="icon" type="image/png" sizes="94x94" href="https://img.icons8.com/3d-fluency/94/melting-face-2.png">
-  <link rel="apple-touch-icon" href="https://img.icons8.com/3d-fluency/94/melting-face-2.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://pbcdn.aoneroom.com">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -32,7 +37,8 @@
       <button type="button" id="searchToggle" class="search-toggle" aria-label="Buka pencarian" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
       </button>
-      <input id="searchInput" type="search" placeholder="Cari film atau serial..." autocomplete="off" aria-label="Cari film atau serial">
+      <input id="searchInput" type="search" placeholder="Cari film atau serial..." autocomplete="off" aria-label="Cari film atau serial" aria-autocomplete="list" aria-controls="searchSuggestions" aria-expanded="false">
+      <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="Saran pencarian" hidden></div>
       <button type="button" id="clearSearch" class="clear-search" aria-label="Hapus pencarian">×</button>
     </form>
   </header>
@@ -66,6 +72,29 @@
         <p id="resultCount" class="result-count" aria-live="polite"></p>
       </div>
 
+      <div id="serialTabs" class="catalog-tabs" aria-label="Jenis serial" hidden>
+        <button class="catalog-tab active" type="button" data-endpoint="tv" aria-pressed="true">Serial TV</button>
+        <button class="catalog-tab" type="button" data-endpoint="tvshows" aria-pressed="false">Drama Pendek</button>
+      </div>
+
+      <div class="library-toolbar" aria-label="Koleksi pribadi">
+        <button class="library-tab" type="button" data-library="continue">Lanjut Nonton <span id="continueCount">0</span></button>
+        <button class="library-tab" type="button" data-library="favorites">Favorit <span id="favoriteCount">0</span></button>
+        <button class="library-tab" type="button" data-library="history">Riwayat <span id="historyCount">0</span></button>
+      </div>
+
+      <section id="libraryPanel" class="library-panel" hidden>
+        <div class="library-panel-head">
+          <div><span class="eyebrow muted">Koleksi saya</span><h3 id="libraryTitle">Lanjut Nonton</h3></div>
+          <div class="library-panel-actions">
+            <button id="clearHistory" class="text-button" type="button" hidden>Hapus riwayat</button>
+            <button id="closeLibrary" class="icon-button" type="button" aria-label="Tutup koleksi">&times;</button>
+          </div>
+        </div>
+        <p id="libraryEmpty" class="library-empty" hidden></p>
+        <div id="libraryGrid" class="card-grid library-grid"></div>
+      </section>
+
       <div id="status" class="status" aria-live="polite">
         <span class="loader"></span>
         <p>Mengambil koleksi terbaru...</p>
@@ -78,11 +107,20 @@
     </section>
   </main>
 
+  <aside id="installApp" class="install-app" hidden>
+    <img src="icons/icon-192.png" alt="" width="54" height="54">
+    <div><strong>Pasang OzancicakMovie</strong><span>Buka lebih cepat seperti aplikasi Android.</span></div>
+    <button id="installAppButton" class="button button-primary" type="button">Install</button>
+    <button id="dismissInstall" class="install-dismiss" type="button" aria-label="Nanti saja">&times;</button>
+  </aside>
+
   <footer>
     <a class="brand brand-small" href="index.html"><img class="brand-logo" src="https://img.icons8.com/3d-fluency/94/melting-face-2.png" alt="" width="38" height="38"><span>OZANCICAKMOVIE</span></a>
     <p>Koleksi film untuk menemani setiap suasana.</p>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="storage.js?v=1"></script>
+  <script src="app.js?v=3"></script>
+  <script src="pwa.js?v=1"></script>
 </body>
 </html>

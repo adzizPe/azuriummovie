@@ -7,7 +7,12 @@ const state = {
   loading: false,
   requestId: 0,
   pendingSections: [],
+  libraryMode: "",
 };
+
+let catalogController = null;
+let suggestionController = null;
+let suggestionTimer = 0;
 
 const elements = {
   catalog: document.querySelector("#catalog"),
@@ -19,6 +24,7 @@ const elements = {
   searchToggle: document.querySelector("#searchToggle"),
   searchInput: document.querySelector("#searchInput"),
   clearSearch: document.querySelector("#clearSearch"),
+  suggestions: document.querySelector("#searchSuggestions"),
   hero: document.querySelector("#hero"),
   heroArt: document.querySelector("#heroArt"),
   heroTitle: document.querySelector("#heroTitle"),
@@ -26,9 +32,29 @@ const elements = {
   heroDesc: document.querySelector("#heroDesc"),
   heroPlay: document.querySelector("#heroPlay"),
   heroInfo: document.querySelector("#heroInfo"),
+  serialTabs: document.querySelector("#serialTabs"),
+  libraryPanel: document.querySelector("#libraryPanel"),
+  libraryTitle: document.querySelector("#libraryTitle"),
+  libraryGrid: document.querySelector("#libraryGrid"),
+  libraryEmpty: document.querySelector("#libraryEmpty"),
+  clearHistory: document.querySelector("#clearHistory"),
+  closeLibrary: document.querySelector("#closeLibrary"),
+  continueCount: document.querySelector("#continueCount"),
+  favoriteCount: document.querySelector("#favoriteCount"),
+  historyCount: document.querySelector("#historyCount"),
 };
 
-const labels = { movies: "Film untukmu", tv: "Serial pilihan", animation: "Dunia anime", kids: "Pilihan keluarga" };
+const labels = { movies: "Film untukmu", tv: "Serial TV pilihan", tvshows: "Drama pendek", animation: "Dunia anime", kids: "Pilihan keluarga" };
+
+function syncSerialTabs() {
+  const serialNavActive = document.querySelector(".nav-link.active")?.dataset.endpoint === "tv";
+  elements.serialTabs.hidden = !serialNavActive || Boolean(state.query);
+  elements.serialTabs.querySelectorAll(".catalog-tab").forEach(button => {
+    const active = button.dataset.endpoint === state.endpoint;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
 
 function apiUrl() {
   if (state.query) return `${API_BASE}/search?q=${encodeURIComponent(state.query)}&page=${state.page}`;
@@ -36,7 +62,13 @@ function apiUrl() {
 }
 
 function watchUrl(item) {
-  return `watch.html?id=${encodeURIComponent(item.subjectId)}&type=${encodeURIComponent(item.type || 1)}`;
+  const query = new URLSearchParams({
+    id: item.subjectId,
+    type: item.type || 1,
+  });
+  if (Number(item.season)) query.set("se", Number(item.season));
+  if (Number(item.episode)) query.set("ep", Number(item.episode));
+  return `watch.html?${query}`;
 }
 
 function text(value, fallback = "") {
@@ -44,8 +76,10 @@ function text(value, fallback = "") {
 }
 
 function createCard(item) {
+  const card = document.createElement("article");
+  card.className = "movie-card";
   const link = document.createElement("a");
-  link.className = "movie-card";
+  link.className = "card-link";
   link.href = watchUrl(item);
   link.setAttribute("aria-label", `Putar ${text(item.name, "film")}`);
 
@@ -56,6 +90,7 @@ function createCard(item) {
   image.alt = `Poster ${text(item.name, "film")}`;
   image.loading = "lazy";
   image.decoding = "async";
+  image.fetchPriority = "low";
   image.addEventListener("error", () => { image.style.opacity = ".15"; });
 
   const rating = document.createElement("span");
@@ -65,7 +100,33 @@ function createCard(item) {
   const play = document.createElement("span");
   play.className = "play-chip";
   play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>';
+  const favorite = document.createElement("button");
+  favorite.type = "button";
+  favorite.className = "favorite-chip";
+  favorite.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S4 16 4 9.6A4.1 4.1 0 0 1 11.1 6.8L12 8l.9-1.2A4.1 4.1 0 0 1 20 9.6c0 6.4-8 10.9-8 10.9Z"/></svg>';
+  const refreshFavorite = () => {
+    const active = OzanStore.isFavorite(item.subjectId);
+    favorite.classList.toggle("active", active);
+    favorite.setAttribute("aria-label", active ? `Hapus ${text(item.name)} dari favorit` : `Tambahkan ${text(item.name)} ke favorit`);
+    favorite.title = active ? "Hapus dari favorit" : "Tambahkan ke favorit";
+  };
+  refreshFavorite();
+  favorite.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    OzanStore.toggleFavorite(item);
+    refreshFavorite();
+  });
   poster.append(image, rating, play);
+
+  if (Number(item.currentTime) > 0 && Number(item.duration) > 0) {
+    const progress = document.createElement("span");
+    progress.className = "watch-progress";
+    const progressFill = document.createElement("i");
+    progressFill.style.width = `${Math.min(100, Math.max(2, (Number(item.currentTime) / Number(item.duration)) * 100))}%`;
+    progress.append(progressFill);
+    poster.append(progress);
+  }
 
   const copy = document.createElement("div");
   copy.className = "card-copy";
@@ -73,14 +134,57 @@ function createCard(item) {
   heading.textContent = text(item.name, "Tanpa judul");
   const meta = document.createElement("p");
   meta.textContent = [text(item.year), text(item.genre).split(",")[0]].filter(Boolean).join("  ·  ");
+  if (Number(item.episode)) meta.textContent += `${meta.textContent ? "  ·  " : ""}Episode ${Number(item.episode)}`;
   copy.append(heading, meta);
   link.append(poster, copy);
-  return link;
+  card.append(link, favorite);
+  return card;
 }
 
 function uniqueItems(items) {
   const seen = new Set();
   return items.filter(item => item?.subjectId && !seen.has(item.subjectId) && seen.add(item.subjectId));
+}
+
+const libraryLabels = {
+  continue: { title: "Lanjut Nonton", empty: "Mulai putar film atau episode. Posisi terakhir akan muncul di sini." },
+  favorites: { title: "Favorit", empty: "Tekan ikon hati pada poster untuk menyimpan tontonan favorit." },
+  history: { title: "Riwayat Tontonan", empty: "Film dan serial yang pernah dibuka akan muncul di sini." },
+};
+
+function getLibraryItems(mode) {
+  if (mode === "continue") return OzanStore.getContinue();
+  if (mode === "favorites") return OzanStore.getFavorites();
+  if (mode === "history") return OzanStore.getHistory();
+  return [];
+}
+
+function updateLibraryCounts() {
+  elements.continueCount.textContent = OzanStore.getContinue().length;
+  elements.favoriteCount.textContent = OzanStore.getFavorites().length;
+  elements.historyCount.textContent = OzanStore.getHistory().length;
+}
+
+function closeLibrary() {
+  state.libraryMode = "";
+  elements.libraryPanel.hidden = true;
+  document.querySelectorAll(".library-tab").forEach(button => button.classList.remove("active"));
+}
+
+function renderLibrary(mode) {
+  const config = libraryLabels[mode];
+  if (!config) return;
+  state.libraryMode = mode;
+  const items = getLibraryItems(mode);
+  elements.libraryTitle.textContent = config.title;
+  elements.libraryGrid.replaceChildren();
+  items.forEach(item => elements.libraryGrid.append(createCard(item)));
+  elements.libraryEmpty.textContent = config.empty;
+  elements.libraryEmpty.hidden = Boolean(items.length);
+  elements.libraryGrid.hidden = !items.length;
+  elements.clearHistory.hidden = mode !== "history" || !items.length;
+  elements.libraryPanel.hidden = false;
+  document.querySelectorAll(".library-tab").forEach(button => button.classList.toggle("active", button.dataset.library === mode));
 }
 
 function extractSections(data) {
@@ -167,8 +271,67 @@ function showError(message) {
   elements.status.append(title, copy, retry);
 }
 
+function hideSuggestions() {
+  elements.suggestions.hidden = true;
+  elements.suggestions.replaceChildren();
+  elements.searchInput.setAttribute("aria-expanded", "false");
+}
+
+function renderSuggestions(words) {
+  elements.suggestions.replaceChildren();
+  words.slice(0, 7).forEach(word => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "suggestion-item";
+    button.setAttribute("role", "option");
+    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>';
+    const label = document.createElement("span");
+    label.textContent = word;
+    button.append(label);
+    button.addEventListener("click", () => {
+      elements.searchInput.value = word;
+      elements.searchForm.classList.add("has-value");
+      hideSuggestions();
+      elements.searchForm.requestSubmit();
+    });
+    elements.suggestions.append(button);
+  });
+  elements.suggestions.hidden = !words.length;
+  elements.searchInput.setAttribute("aria-expanded", String(Boolean(words.length)));
+}
+
+async function fetchSuggestions(query) {
+  suggestionController?.abort();
+  suggestionController = new AbortController();
+  try {
+    const response = await fetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}`, {
+      signal: suggestionController.signal,
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("Saran tidak tersedia");
+    const result = await response.json();
+    if (elements.searchInput.value.trim() !== query) return;
+    const words = (result.data?.items || result.items || []).map(item => text(item.word || item.name)).filter(Boolean);
+    renderSuggestions([...new Set(words)]);
+  } catch (error) {
+    if (error.name !== "AbortError") hideSuggestions();
+  }
+}
+
+function scheduleSuggestions(query) {
+  clearTimeout(suggestionTimer);
+  if (query.length < 2) {
+    suggestionController?.abort();
+    hideSuggestions();
+    return;
+  }
+  suggestionTimer = window.setTimeout(() => fetchSuggestions(query), 280);
+}
+
 async function loadCatalog(append = false) {
-  if (state.loading) return;
+  if (state.loading && append) return;
+  catalogController?.abort();
+  catalogController = new AbortController();
   const currentRequest = ++state.requestId;
   setLoading(true, append);
   if (!append) {
@@ -176,7 +339,7 @@ async function loadCatalog(append = false) {
     elements.count.textContent = "";
   }
   try {
-    const response = await fetch(apiUrl());
+    const response = await fetch(apiUrl(), { signal: catalogController.signal });
     if (!response.ok) throw new Error(`Server merespons ${response.status}`);
     const data = await response.json();
     if (currentRequest !== state.requestId) return;
@@ -188,6 +351,7 @@ async function loadCatalog(append = false) {
     elements.status.hidden = true;
     elements.loadMore.hidden = Boolean(state.query) || (allItems.length === 0 && state.pendingSections.length === 0);
   } catch (error) {
+    if (error.name === "AbortError") return;
     if (currentRequest === state.requestId && !append) showError(`${error.message} Periksa koneksi lalu coba kembali.`);
   } finally {
     if (currentRequest === state.requestId) setLoading(false, append);
@@ -199,12 +363,34 @@ document.querySelectorAll(".nav-link").forEach(button => {
     document.querySelector(".nav-link.active")?.classList.remove("active");
     button.classList.add("active");
     state.endpoint = button.dataset.endpoint;
+    OzanStore.setPreference("lastEndpoint", state.endpoint);
+    if (state.endpoint === "tv") OzanStore.setPreference("serialEndpoint", "tv");
+    closeLibrary();
     state.page = 1;
     state.query = "";
     elements.searchInput.value = "";
     elements.searchForm.classList.remove("has-value", "is-open");
     elements.searchToggle.setAttribute("aria-expanded", "false");
     elements.title.textContent = labels[state.endpoint];
+    syncSerialTabs();
+    loadCatalog(false);
+  });
+});
+
+elements.serialTabs.querySelectorAll(".catalog-tab").forEach(button => {
+  button.addEventListener("click", () => {
+    if (state.endpoint === button.dataset.endpoint && !state.query) return;
+    state.endpoint = button.dataset.endpoint;
+    OzanStore.setPreference("lastEndpoint", state.endpoint);
+    OzanStore.setPreference("serialEndpoint", state.endpoint);
+    closeLibrary();
+    state.page = 1;
+    state.query = "";
+    elements.searchInput.value = "";
+    elements.searchForm.classList.remove("has-value", "is-open");
+    elements.searchToggle.setAttribute("aria-expanded", "false");
+    elements.title.textContent = labels[state.endpoint];
+    syncSerialTabs();
     loadCatalog(false);
   });
 });
@@ -215,7 +401,10 @@ elements.searchForm.addEventListener("submit", event => {
   if (!query) return;
   state.query = query;
   state.page = 1;
+  closeLibrary();
+  hideSuggestions();
   elements.title.textContent = `Hasil pencarian “${query}”`;
+  syncSerialTabs();
   loadCatalog(false).then(() => {
     if (matchMedia("(max-width: 700px)").matches) {
       document.querySelector(".catalog-shell").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -223,16 +412,23 @@ elements.searchForm.addEventListener("submit", event => {
   });
 });
 
-elements.searchInput.addEventListener("input", () => elements.searchForm.classList.toggle("has-value", Boolean(elements.searchInput.value)));
+elements.searchInput.addEventListener("input", () => {
+  const query = elements.searchInput.value.trim();
+  elements.searchForm.classList.toggle("has-value", Boolean(query));
+  scheduleSuggestions(query);
+});
 elements.searchInput.addEventListener("focus", () => {
   elements.searchForm.classList.add("is-open");
   elements.searchToggle.setAttribute("aria-expanded", "true");
+  scheduleSuggestions(elements.searchInput.value.trim());
 });
 elements.searchInput.addEventListener("keydown", event => {
   if (event.key === "Escape" && !elements.searchInput.value) {
     elements.searchForm.classList.remove("is-open");
     elements.searchToggle.setAttribute("aria-expanded", "false");
     elements.searchInput.blur();
+  } else if (event.key === "Escape") {
+    hideSuggestions();
   }
 });
 elements.searchToggle.addEventListener("click", () => {
@@ -251,15 +447,43 @@ elements.searchToggle.addEventListener("click", () => {
 });
 elements.clearSearch.addEventListener("click", () => {
   elements.searchInput.value = "";
+  hideSuggestions();
   elements.searchForm.classList.remove("has-value");
   if (state.query) {
     state.query = "";
     state.page = 1;
     elements.title.textContent = labels[state.endpoint];
+    syncSerialTabs();
     loadCatalog(false);
   }
   elements.searchInput.focus();
 });
+
+document.querySelectorAll(".library-tab").forEach(button => {
+  button.addEventListener("click", () => {
+    if (state.libraryMode === button.dataset.library && !elements.libraryPanel.hidden) {
+      closeLibrary();
+      return;
+    }
+    renderLibrary(button.dataset.library);
+  });
+});
+
+elements.closeLibrary.addEventListener("click", closeLibrary);
+elements.clearHistory.addEventListener("click", () => {
+  if (!window.confirm("Hapus seluruh riwayat tontonan di perangkat ini?")) return;
+  OzanStore.clearHistory();
+});
+
+window.addEventListener("ozan:librarychange", () => {
+  updateLibraryCounts();
+  if (state.libraryMode && !elements.libraryPanel.hidden) renderLibrary(state.libraryMode);
+});
+
+document.addEventListener("pointerdown", event => {
+  if (!elements.searchForm.contains(event.target)) hideSuggestions();
+});
+
 elements.loadMore.addEventListener("click", () => {
   if (state.pendingSections.length) {
     const remaining = state.pendingSections;
@@ -272,4 +496,16 @@ elements.loadMore.addEventListener("click", () => {
   loadCatalog(true);
 });
 
+function restoreNavigation() {
+  const preferences = OzanStore.getPreferences();
+  const savedEndpoint = labels[preferences.lastEndpoint] ? preferences.lastEndpoint : "movies";
+  state.endpoint = savedEndpoint === "tv" && preferences.serialEndpoint === "tvshows" ? "tvshows" : savedEndpoint;
+  const mainEndpoint = ["tv", "tvshows"].includes(state.endpoint) ? "tv" : state.endpoint;
+  document.querySelectorAll(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.endpoint === mainEndpoint));
+  elements.title.textContent = labels[state.endpoint];
+}
+
+restoreNavigation();
+updateLibraryCounts();
+syncSerialTabs();
 loadCatalog();

@@ -14,6 +14,17 @@ node_modules/
 Thumbs.db
 *.log
 
+# Android/TWA build output and signing secrets
+android-twa/.gradle/
+android-twa/app/build/
+android-twa/build/
+android-twa/local.properties
+artifacts/*.apk
+artifacts/*.aab
+artifacts/*.idsig
+*.jks
+*.keystore
+
 # Editor-specific settings
 .vscode/
 .idea/

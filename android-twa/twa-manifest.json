@@ -1,0 +1,50 @@
+{
+  "packageId": "id.my.ozancicak.movie",
+  "host": "ozancicak.my.id",
+  "name": "OzancicakMovie",
+  "launcherName": "OzanMovie",
+  "display": "standalone",
+  "themeColor": "#07120F",
+  "themeColorDark": "#050B0A",
+  "navigationColor": "#050B0A",
+  "navigationColorDark": "#050B0A",
+  "navigationDividerColor": "#050B0A",
+  "navigationDividerColorDark": "#050B0A",
+  "backgroundColor": "#050B0A",
+  "enableNotifications": false,
+  "startUrl": "/?source=android",
+  "iconUrl": "https://ozancicak.my.id/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 250,
+  "signingKey": {
+    "path": "./ozancicakmovie.keystore",
+    "alias": "ozancicakmovie"
+  },
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://ozancicak.my.id/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://ozancicak.my.id/",
+  "minSdkVersion": 21,
+  "orientation": "any",
+  "fingerprints": [
+    {
+      "name": "OzancicakMovie test build",
+      "value": "0C:41:EE:8C:F2:66:6D:41:F3:91:E0:48:7C:13:CC:28:54:DE:9B:B5:BE:53:10:77:4B:9F:29:28:07:F8:97:60"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": ["standalone"]
+}
