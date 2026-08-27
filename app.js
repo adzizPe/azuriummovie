@@ -28,7 +28,7 @@ const elements = {
   heroInfo: document.querySelector("#heroInfo"),
 };
 
-const labels = { movies: "Film untukmu", tv: "Serial pilihan", animation: "Dunia animasi", kids: "Pilihan keluarga" };
+const labels = { movies: "Film untukmu", tv: "Serial pilihan", animation: "Dunia anime", kids: "Pilihan keluarga" };
 
 function apiUrl() {
   if (state.query) return `${API_BASE}/search?q=${encodeURIComponent(state.query)}&page=${state.page}`;
