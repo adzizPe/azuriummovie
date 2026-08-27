@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . '_access.php';
+
 const ALLOWED_ENDPOINTS = [
     'home',
     'movies',
@@ -46,15 +48,13 @@ if (!in_array($endpoint, ALLOWED_ENDPOINTS, true)) {
     sendJson(['error' => 'Endpoint not found'], 404);
 }
 
-$apiBase = getenv('MOVIEBOX_API_BASE') ?: '';
-$configPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . '.api-config.php';
-
-if ($apiBase === '' && is_file($configPath)) {
-    $config = require $configPath;
-    if (is_array($config) && isset($config['MOVIEBOX_API_BASE'])) {
-        $apiBase = trim((string) $config['MOVIEBOX_API_BASE']);
-    }
+$config = ozan_load_private_config();
+$access = ozan_request_access($config);
+if (!$access['ok']) {
+    sendJson(['error' => $access['error']], (int) $access['status']);
 }
+
+$apiBase = getenv('MOVIEBOX_API_BASE') ?: trim((string) ($config['MOVIEBOX_API_BASE'] ?? ''));
 
 if ($apiBase === '') {
     sendJson(['error' => 'Server configuration is incomplete'], 500);
@@ -131,4 +131,3 @@ header('Cache-Control: public, max-age=' . $cacheSeconds);
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
 echo $body;
-

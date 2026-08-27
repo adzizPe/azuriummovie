@@ -57,9 +57,11 @@ function endpoint(path, query = {}) {
 }
 
 async function getJson(path, query) {
-  const response = await fetch(endpoint(path, query), {
+  const response = await (window.OzanAccess ? window.OzanAccess.fetch(endpoint(path, query), {
     cache: path === "stream" ? "no-store" : "default",
-  });
+  }) : fetch(endpoint(path, query), {
+    cache: path === "stream" ? "no-store" : "default",
+  }));
   if (!response.ok) {
     let providerMessage = "";
     try {
@@ -105,16 +107,17 @@ function refreshWatchFavorite() {
 }
 
 function renderDetail(detail) {
+  const displayTitle = OzanStore.displayTitle(detail.title || detail.name);
   subjectType = Number(detail.subjectType) || subjectType;
-  currentDetail = OzanStore.normalizeItem(detail);
-  document.title = `${detail.title || "Menonton"} — OzancicakMovie`;
-  el.title.textContent = detail.title || "Tanpa judul";
+  currentDetail = OzanStore.normalizeItem({ ...detail, title: displayTitle, name: displayTitle });
+  document.title = `${displayTitle} — OzancicakMovie`;
+  el.title.textContent = displayTitle;
   el.type.textContent = subjectType === 7 ? "DRAMA PENDEK" : subjectType === 2 ? "SERIAL" : "FILM";
   el.rating.textContent = `★ ${detail.imdbRatingValue || "—"}`;
   el.meta.textContent = [detail.releaseDate?.slice(0, 4), formatDuration(detail.duration), detail.countryName].filter(Boolean).join("  ·  ");
   el.description.textContent = detail.description || "Deskripsi belum tersedia untuk judul ini.";
   el.poster.src = detail.cover?.url || "";
-  el.poster.alt = `Poster ${detail.title || ""}`;
+  el.poster.alt = `Poster ${displayTitle}`;
   el.poster.loading = "lazy";
   el.cast.textContent = (detail.staffList || []).slice(0, 5).map(person => person.name).join(", ") || "Belum tersedia";
   el.genres.replaceChildren();
@@ -285,8 +288,8 @@ function renderEpisodes(seasons) {
   updateEpisodeActions();
 }
 
-function saveCurrentProgress(force = false) {
-  if (changingStream || !currentDetail || !Number.isFinite(el.video.currentTime) || el.video.currentTime <= 0) return;
+function saveCurrentProgress(force = false, started = false) {
+  if (changingStream || !currentDetail || !Number.isFinite(el.video.currentTime) || (!started && el.video.currentTime <= 0)) return;
   const now = Date.now();
   if (!force && now - lastProgressSavedAt < 5000) return;
   lastProgressSavedAt = now;
@@ -295,6 +298,7 @@ function saveCurrentProgress(force = false) {
     episode: currentEpisode,
     currentTime: el.video.currentTime,
     duration: Number.isFinite(el.video.duration) ? el.video.duration : 0,
+    started,
   });
 }
 
@@ -374,6 +378,7 @@ function navigateEpisode(offset, shouldPlay = true) {
 }
 
 function createRecommendation(item) {
+  const displayTitle = OzanStore.displayTitle(item.name || item.title);
   const card = document.createElement("article");
   card.className = "movie-card";
   const link = document.createElement("a");
@@ -383,7 +388,7 @@ function createRecommendation(item) {
   wrap.className = "poster-wrap";
   const img = document.createElement("img");
   img.src = item.poster || item.cover?.url || "";
-  img.alt = `Poster ${item.name || item.title || "film"}`;
+  img.alt = `Poster ${displayTitle}`;
   img.loading = "lazy";
   img.decoding = "async";
   img.fetchPriority = "low";
@@ -410,7 +415,7 @@ function createRecommendation(item) {
   const copy = document.createElement("div");
   copy.className = "card-copy";
   const title = document.createElement("h4");
-  title.textContent = item.name || item.title || "Tanpa judul";
+  title.textContent = displayTitle;
   const meta = document.createElement("p");
   meta.textContent = item.year || "Lihat detail";
   copy.append(title, meta);
@@ -492,6 +497,7 @@ el.video.addEventListener("loadedmetadata", () => {
   el.error.hidden = true;
 });
 el.video.addEventListener("canplay", () => { el.placeholder.hidden = true; });
+el.video.addEventListener("play", () => saveCurrentProgress(true, true));
 el.video.addEventListener("timeupdate", () => saveCurrentProgress());
 el.video.addEventListener("pause", () => saveCurrentProgress(true));
 el.video.addEventListener("volumechange", () => OzanStore.setPreference("volume", el.video.volume));
@@ -524,4 +530,11 @@ window.addEventListener("beforeunload", () => {
   subtitleBlobUrls.forEach(URL.revokeObjectURL);
 });
 
-init();
+window.addEventListener("pagehide", () => saveCurrentProgress(true));
+
+async function startWatch() {
+  await window.OzanAccess?.ready();
+  init();
+}
+
+startWatch();

@@ -1,5 +1,9 @@
 const API_BASE = "/api/moviebox";
 
+function apiFetch(input, options) {
+  return window.OzanAccess ? window.OzanAccess.fetch(input, options) : window.fetch(input, options);
+}
+
 const state = {
   endpoint: "movies",
   page: 1,
@@ -76,18 +80,19 @@ function text(value, fallback = "") {
 }
 
 function createCard(item) {
+  const displayName = OzanStore.displayTitle(item.name || item.title);
   const card = document.createElement("article");
   card.className = "movie-card";
   const link = document.createElement("a");
   link.className = "card-link";
   link.href = watchUrl(item);
-  link.setAttribute("aria-label", `Putar ${text(item.name, "film")}`);
+  link.setAttribute("aria-label", `Putar ${displayName}`);
 
   const poster = document.createElement("div");
   poster.className = "poster-wrap";
   const image = document.createElement("img");
   image.src = text(item.poster);
-  image.alt = `Poster ${text(item.name, "film")}`;
+  image.alt = `Poster ${displayName}`;
   image.loading = "lazy";
   image.decoding = "async";
   image.fetchPriority = "low";
@@ -107,7 +112,7 @@ function createCard(item) {
   const refreshFavorite = () => {
     const active = OzanStore.isFavorite(item.subjectId);
     favorite.classList.toggle("active", active);
-    favorite.setAttribute("aria-label", active ? `Hapus ${text(item.name)} dari favorit` : `Tambahkan ${text(item.name)} ke favorit`);
+    favorite.setAttribute("aria-label", active ? `Hapus ${displayName} dari favorit` : `Tambahkan ${displayName} ke favorit`);
     favorite.title = active ? "Hapus dari favorit" : "Tambahkan ke favorit";
   };
   refreshFavorite();
@@ -131,7 +136,7 @@ function createCard(item) {
   const copy = document.createElement("div");
   copy.className = "card-copy";
   const heading = document.createElement("h4");
-  heading.textContent = text(item.name, "Tanpa judul");
+  heading.textContent = displayName;
   const meta = document.createElement("p");
   meta.textContent = [text(item.year), text(item.genre).split(",")[0]].filter(Boolean).join("  ·  ");
   if (Number(item.episode)) meta.textContent += `${meta.textContent ? "  ·  " : ""}Episode ${Number(item.episode)}`;
@@ -228,7 +233,7 @@ function renderSections(sections, append = false) {
 async function showHero(item) {
   if (!item) return;
   elements.heroArt.style.backgroundImage = `url("${text(item.poster).replaceAll('"', '%22')}")`;
-  elements.heroTitle.textContent = text(item.name, "Pilihan hari ini");
+  elements.heroTitle.textContent = OzanStore.displayTitle(item.name || item.title || "Pilihan hari ini");
   elements.heroMeta.textContent = [item.year, item.rating ? `★ ${item.rating}` : "", item.country].filter(Boolean).join("  ·  ");
   elements.heroDesc.textContent = text(item.desc, `${text(item.genre, "Film pilihan")} untuk menemani waktu santaimu.`);
   elements.heroPlay.href = watchUrl(item);
@@ -239,7 +244,7 @@ async function showHero(item) {
 
   if (!item.desc) {
     try {
-      const response = await fetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
+      const response = await apiFetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
       const result = await response.json();
       if (result?.data?.description) elements.heroDesc.textContent = result.data.description;
     } catch (_) { /* Ringkasan cadangan sudah tampil. */ }
@@ -304,7 +309,7 @@ async function fetchSuggestions(query) {
   suggestionController?.abort();
   suggestionController = new AbortController();
   try {
-    const response = await fetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}`, {
+    const response = await apiFetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}`, {
       signal: suggestionController.signal,
       cache: "no-store",
     });
@@ -339,7 +344,7 @@ async function loadCatalog(append = false) {
     elements.count.textContent = "";
   }
   try {
-    const response = await fetch(apiUrl(), { signal: catalogController.signal });
+    const response = await apiFetch(apiUrl(), { signal: catalogController.signal });
     if (!response.ok) throw new Error(`Server merespons ${response.status}`);
     const data = await response.json();
     if (currentRequest !== state.requestId) return;
@@ -480,6 +485,24 @@ window.addEventListener("ozan:librarychange", () => {
   if (state.libraryMode && !elements.libraryPanel.hidden) renderLibrary(state.libraryMode);
 });
 
+function refreshLibraryFromStorage() {
+  OzanStore.reload();
+  updateLibraryCounts();
+  if (state.libraryMode && !elements.libraryPanel.hidden) renderLibrary(state.libraryMode);
+  document.querySelectorAll(".movie-card").forEach(card => {
+    const favorite = card.querySelector(".favorite-chip");
+    const link = card.querySelector(".card-link");
+    if (!favorite || !link) return;
+    const id = new URL(link.href, location.href).searchParams.get("id");
+    favorite.classList.toggle("active", OzanStore.isFavorite(id));
+  });
+}
+
+window.addEventListener("pageshow", refreshLibraryFromStorage);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshLibraryFromStorage();
+});
+
 document.addEventListener("pointerdown", event => {
   if (!elements.searchForm.contains(event.target)) hideSuggestions();
 });
@@ -505,7 +528,12 @@ function restoreNavigation() {
   elements.title.textContent = labels[state.endpoint];
 }
 
-restoreNavigation();
-updateLibraryCounts();
-syncSerialTabs();
-loadCatalog();
+async function startApp() {
+  await window.OzanAccess?.ready();
+  restoreNavigation();
+  updateLibraryCounts();
+  syncSerialTabs();
+  loadCatalog();
+}
+
+startApp();

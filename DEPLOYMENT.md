@@ -15,6 +15,7 @@ Berkas website yang wajib ikut diperbarui:
 - `styles.css`
 - `app.js`
 - `watch.js`
+- `access.js`
 - `storage.js`
 - `pwa.js`
 - `sw.js`
@@ -22,7 +23,7 @@ Berkas website yang wajib ikut diperbarui:
 - `.htaccess`
 - folder `icons/`
 - folder `.well-known/`
-- folder `api/moviebox/`
+- folder `api/` (termasuk `_access.php`, `access/`, dan `moviebox/`)
 
 File Cloudflare berikut boleh tidak diunggah karena tidak digunakan oleh cPanel:
 
@@ -44,6 +45,10 @@ Di cPanel File Manager, aktifkan **Show Hidden Files**, lalu buat file
 <?php
 return [
     'MOVIEBOX_API_BASE' => 'MASUKKAN_ALAMAT_API_MOVIEBOX_DI_SINI',
+    'ACCESS_TOKENS' => [
+        'TOKEN-01', 'TOKEN-02', 'TOKEN-03', 'TOKEN-04', 'TOKEN-05',
+        'TOKEN-06', 'TOKEN-07', 'TOKEN-08', 'TOKEN-09', 'TOKEN-10',
+    ],
 ];
 ```
 
@@ -51,14 +56,27 @@ File `.api-config.php` sudah tercantum dalam `.gitignore` dan akses langsungnya
 diblokir oleh `.htaccess`. Jangan memasukkannya ke repository atau membagikan
 isinya melalui screenshot.
 
+Versi privat yang sudah berisi API dan 10 token tersedia secara lokal di
+`.api-config.php`. Unggah file privat itu secara manual melalui cPanel. Daftar
+token pemilik tersedia di `.access-tokens.txt`; file daftar tersebut jangan
+diunggah ke `public_html` maupun GitHub.
+
+Saat token pertama kali digunakan, server otomatis membuat
+`.access-bindings.json`. Pastikan PHP boleh menulis pada document root. File
+tersebut menyimpan hash pengikatan token-perangkat, bukan token mentah, dan
+akses langsungnya diblokir oleh `.htaccess`.
+
 ## Pengujian
 
-1. Buka `https://ozancicak.my.id/api/moviebox/movies?page=1`.
+1. Buka `https://ozancicak.my.id/api/moviebox/movies?page=1`. Respons `Token
+   tidak valid` atau `Token belum diaktifkan` adalah hasil yang benar karena
+   endpoint katalog sekarang dilindungi.
 2. Buka `https://ozancicak.my.id/manifest.webmanifest` dan pastikan JSON
    manifest muncul, bukan halaman 404.
 3. Buka `https://ozancicak.my.id/.well-known/assetlinks.json` dan pastikan JSON
    Digital Asset Links muncul tanpa pengalihan.
-4. Jika semuanya muncul, buka `https://ozancicak.my.id`.
+4. Buka `https://ozancicak.my.id`, masukkan salah satu token dari daftar privat,
+   lalu pastikan katalog muncul.
 5. Uji pencarian, halaman detail, pemutar, pilihan resolusi, subtitle, favorit,
    riwayat, lanjut menonton, serta pemilih episode.
 
@@ -75,7 +93,7 @@ Status > Run AutoSSL** agar website memakai HTTPS.
 
 APK uji yang sudah dibuat berada di:
 
-`artifacts/OzancicakMovie-1.0.0-test.apk`
+`artifacts/OzancicakMovie-1.1.0-test.apk`
 
 APK ini memakai Trusted Web Activity dan membuka `https://ozancicak.my.id`
 secara online, sehingga katalog dan video tidak disalin ke APK. Unggah dahulu

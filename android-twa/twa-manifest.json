@@ -19,8 +19,8 @@
     "path": "./ozancicakmovie.keystore",
     "alias": "ozancicakmovie"
   },
-  "appVersion": "1.0.0",
-  "appVersionCode": 1,
+  "appVersion": "1.1.0",
+  "appVersionCode": 2,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://ozancicak.my.id/manifest.webmanifest",

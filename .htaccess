@@ -2,9 +2,9 @@ Options -Indexes
 AddType application/manifest+json .webmanifest
 
 # File ini berisi konfigurasi privat saat website dipasang di cPanel.
-<Files ".api-config.php">
+<FilesMatch "^\.(api-config\.php|access-bindings\.json|access-tokens\.txt)$">
   Require all denied
-</Files>
+</FilesMatch>
 
 # Kompres aset teks jika modul tersedia di hosting.
 <IfModule mod_deflate.c>

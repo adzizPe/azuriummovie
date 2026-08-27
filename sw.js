@@ -1,12 +1,13 @@
-const SHELL_CACHE = "ozancicakmovie-shell-v1";
+const SHELL_CACHE = "ozancicakmovie-shell-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/watch.html",
-  "/styles.css?v=3",
-  "/storage.js?v=1",
-  "/app.js?v=3",
-  "/watch.js?v=4",
+  "/styles.css?v=6",
+  "/access.js?v=2",
+  "/storage.js?v=2",
+  "/app.js?v=4",
+  "/watch.js?v=5",
   "/pwa.js?v=1",
   "/manifest.webmanifest",
   "/icons/icon-192.png",

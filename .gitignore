@@ -7,6 +7,8 @@
 
 # Konfigurasi rahasia untuk hosting cPanel (dibuat manual di server)
 .api-config.php
+.access-bindings.json
+.access-tokens.txt
 
 # Dependencies and local tooling
 node_modules/

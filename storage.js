@@ -4,6 +4,11 @@
   const STORAGE_KEY = "ozancicakmovie:user-library:v1";
   const MAX_HISTORY = 60;
   const MAX_PROGRESS = 30;
+  const TITLE_ALIASES = new Map([
+    ["levitating", "Para Perasuk"],
+    ["hantu dalam sel", "Ghost In The Cell"],
+    ["wait for me to be successful later", "Tunggu Aku Sukses Nanti"],
+  ]);
   const defaults = {
     favorites: [],
     history: [],
@@ -39,6 +44,16 @@
 
   let state = read();
 
+  function displayTitle(value) {
+    const original = String(value || "Tanpa judul").trim();
+    return TITLE_ALIASES.get(original.toLocaleLowerCase("id-ID")) || original;
+  }
+
+  function reload() {
+    state = read();
+    return clone(state);
+  }
+
   function persist() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -50,7 +65,7 @@
     const subjectId = String(item.subjectId || item.id || "");
     return {
       subjectId,
-      name: String(item.name || item.title || "Tanpa judul"),
+      name: displayTitle(item.name || item.title),
       type: Number(item.type || item.subjectType) || 1,
       poster: String(item.poster || item.cover?.url || ""),
       year: String(item.year || item.releaseDate || "").slice(0, 4),
@@ -126,7 +141,7 @@
     const completed = duration > 0 && (currentTime / duration >= 0.95 || (duration > 900 && duration - currentTime < 45));
     if (completed) {
       state.progress = state.progress.filter(value => progressKey(value) !== progressKey(entry));
-    } else if (currentTime >= 5) {
+    } else if (currentTime >= 1 || playback.started === true) {
       state.progress = upsert(state.progress, entry, progressKey, MAX_PROGRESS);
     }
     persist();
@@ -172,6 +187,8 @@
   }
 
   window.OzanStore = {
+    displayTitle,
+    reload,
     normalizeItem,
     isFavorite,
     toggleFavorite,
@@ -187,4 +204,10 @@
     getPreferences,
     setPreference,
   };
+
+  window.addEventListener("storage", event => {
+    if (event.key !== STORAGE_KEY) return;
+    reload();
+    window.dispatchEvent(new CustomEvent("ozan:librarychange"));
+  });
 })();

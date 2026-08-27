@@ -9,7 +9,7 @@ proxy `/api/moviebox`.
 
 APK uji yang siap dipasang:
 
-`../artifacts/OzancicakMovie-1.0.0-test.apk`
+`../artifacts/OzancicakMovie-1.1.0-test.apk`
 
 APK dan keystore sengaja diabaikan Git. Kode sumber Android, konfigurasi TWA,
 PWA, dan Digital Asset Links tetap boleh masuk repository publik karena tidak
