@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "OzancicakMovie",
-  "short_name": "OzanMovie",
+  "name": "ozancicakmovie",
+  "short_name": "ozancicakmovie",
   "description": "Film, serial TV, drama pendek, anime, dan tontonan keluarga dalam satu aplikasi.",
   "lang": "id-ID",
   "dir": "ltr",
@@ -9,7 +9,7 @@
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#050b0a",
   "theme_color": "#07120f",
   "categories": ["entertainment", "video"],

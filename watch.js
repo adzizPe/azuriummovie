@@ -16,6 +16,9 @@ let lastProgressSavedAt = 0;
 let playAfterLoad = false;
 let changingStream = false;
 let attachingSubtitles = false;
+let originalDescription = "";
+let descriptionTranslated = false;
+let translationRequest = 0;
 
 const savedPreferences = OzanStore.getPreferences();
 let autoplayEnabled = savedPreferences.autoplay !== false;
@@ -39,6 +42,9 @@ const el = {
   rating: document.querySelector("#detailRating"),
   meta: document.querySelector("#detailMeta"),
   description: document.querySelector("#detailDescription"),
+  descriptionToggle: document.querySelector("#descriptionToggle"),
+  translateDescription: document.querySelector("#translateDescription"),
+  translationStatus: document.querySelector("#translationStatus"),
   genres: document.querySelector("#genreList"),
   poster: document.querySelector("#detailPoster"),
   cast: document.querySelector("#castList"),
@@ -93,6 +99,19 @@ function isEpisodic() {
   return subjectType === 2 || subjectType === 7;
 }
 
+function lockScreenOrientation(mode) {
+  screen.orientation?.lock?.(mode).catch(() => {});
+}
+
+function videoMayUseLandscape() {
+  return subjectType !== 7 && (!el.video.videoWidth || el.video.videoWidth >= el.video.videoHeight);
+}
+
+function syncVideoOrientation() {
+  const fullscreenVideo = document.fullscreenElement === el.video || document.webkitFullscreenElement === el.video;
+  lockScreenOrientation(fullscreenVideo && videoMayUseLandscape() ? "landscape" : "portrait-primary");
+}
+
 function setSourceStatus(message, tone = "") {
   el.sourceStatus.textContent = message;
   el.sourceStatus.dataset.tone = tone;
@@ -106,16 +125,89 @@ function refreshWatchFavorite() {
   el.favorite.querySelector("span").textContent = active ? "Tersimpan" : "Favorit";
 }
 
+function descriptionIsLong(value) {
+  return matchMedia("(max-width: 700px)").matches && String(value).trim().length > 220;
+}
+
+function renderDescription(value) {
+  originalDescription = String(value || "Deskripsi belum tersedia untuk judul ini.").trim();
+  descriptionTranslated = false;
+  el.description.textContent = originalDescription;
+  el.description.classList.toggle("is-collapsed", descriptionIsLong(originalDescription));
+  el.descriptionToggle.hidden = !descriptionIsLong(originalDescription);
+  el.descriptionToggle.textContent = "Selengkapnya";
+  el.translateDescription.hidden = originalDescription.length < 24;
+  el.translateDescription.textContent = "Terjemahkan ke Indonesia";
+  el.translationStatus.textContent = "";
+}
+
+function looksEnglish(value) {
+  const words = String(value).toLowerCase().match(/[a-z]+/g) || [];
+  const markers = new Set(["the", "and", "with", "from", "this", "that", "his", "her", "their", "when", "into", "for", "while"]);
+  return words.filter(word => markers.has(word)).length >= 2;
+}
+
+function translationChunks(value) {
+  const chunks = [];
+  let remaining = String(value).trim();
+  while (remaining) {
+    let end = Math.min(430, remaining.length);
+    if (end < remaining.length) {
+      const boundary = Math.max(remaining.lastIndexOf(". ", end), remaining.lastIndexOf(" ", end));
+      if (boundary > 180) end = boundary + 1;
+    }
+    chunks.push(remaining.slice(0, end).trim());
+    remaining = remaining.slice(end).trim();
+  }
+  return chunks.filter(Boolean);
+}
+
+async function translateCurrentDescription(automatic = false) {
+  if (descriptionTranslated) {
+    renderDescription(originalDescription);
+    return;
+  }
+  const request = ++translationRequest;
+  el.translateDescription.disabled = true;
+  el.translationStatus.textContent = automatic ? "Menerjemahkan otomatis..." : "Menerjemahkan...";
+  try {
+    const translatedParts = [];
+    for (const part of translationChunks(originalDescription)) {
+      const response = await window.OzanAccess.fetch("/api/translate/", {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ text: part }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok || !body.translatedText) throw new Error(body.error || "Terjemahan belum tersedia.");
+      translatedParts.push(body.translatedText);
+    }
+    if (request !== translationRequest) return;
+    el.description.textContent = translatedParts.join(" ");
+    descriptionTranslated = true;
+    el.description.classList.toggle("is-collapsed", descriptionIsLong(el.description.textContent));
+    el.descriptionToggle.hidden = !descriptionIsLong(el.description.textContent);
+    el.descriptionToggle.textContent = "Selengkapnya";
+    el.translateDescription.textContent = "Tampilkan bahasa asli";
+    el.translationStatus.textContent = "Terjemahan Indonesia";
+  } catch (error) {
+    el.translationStatus.textContent = error.message;
+  } finally {
+    el.translateDescription.disabled = false;
+  }
+}
+
 function renderDetail(detail) {
   const displayTitle = OzanStore.displayTitle(detail.title || detail.name);
   subjectType = Number(detail.subjectType) || subjectType;
   currentDetail = OzanStore.normalizeItem({ ...detail, title: displayTitle, name: displayTitle });
-  document.title = `${displayTitle} — OzancicakMovie`;
+  document.title = `${displayTitle} — ozancicakmovie`;
   el.title.textContent = displayTitle;
   el.type.textContent = subjectType === 7 ? "DRAMA PENDEK" : subjectType === 2 ? "SERIAL" : "FILM";
   el.rating.textContent = `★ ${detail.imdbRatingValue || "—"}`;
   el.meta.textContent = [detail.releaseDate?.slice(0, 4), formatDuration(detail.duration), detail.countryName].filter(Boolean).join("  ·  ");
-  el.description.textContent = detail.description || "Deskripsi belum tersedia untuk judul ini.";
+  renderDescription(detail.description);
   el.poster.src = detail.cover?.url || "";
   el.poster.alt = `Poster ${displayTitle}`;
   el.poster.loading = "lazy";
@@ -128,6 +220,7 @@ function renderDetail(detail) {
   });
   OzanStore.recordHistory(currentDetail);
   refreshWatchFavorite();
+  if (looksEnglish(originalDescription)) window.setTimeout(() => translateCurrentDescription(true), 250);
 }
 
 function showPlayerError(message) {
@@ -492,6 +585,11 @@ el.favorite.addEventListener("click", () => {
   OzanStore.toggleFavorite(currentDetail);
   refreshWatchFavorite();
 });
+el.descriptionToggle.addEventListener("click", () => {
+  const collapsed = el.description.classList.toggle("is-collapsed");
+  el.descriptionToggle.textContent = collapsed ? "Selengkapnya" : "Lebih sedikit";
+});
+el.translateDescription.addEventListener("click", () => translateCurrentDescription(false));
 el.video.addEventListener("loadedmetadata", () => {
   el.placeholder.hidden = true;
   el.error.hidden = true;
@@ -506,6 +604,12 @@ el.video.addEventListener("ended", () => {
   if (isEpisodic() && autoplayEnabled && navigateEpisode(1, true)) return;
   setSourceStatus("Pemutaran selesai", "ok");
 });
+document.addEventListener("fullscreenchange", syncVideoOrientation);
+document.addEventListener("webkitfullscreenchange", syncVideoOrientation);
+el.video.addEventListener("webkitbeginfullscreen", () => {
+  lockScreenOrientation(videoMayUseLandscape() ? "landscape" : "portrait-primary");
+});
+el.video.addEventListener("webkitendfullscreen", () => lockScreenOrientation("portrait-primary"));
 el.video.addEventListener("error", () => {
   if (!currentSources.length) return;
   const nextIndex = currentSourceIndex + 1;
@@ -534,7 +638,11 @@ window.addEventListener("pagehide", () => saveCurrentProgress(true));
 
 async function startWatch() {
   await window.OzanAccess?.ready();
+  lockScreenOrientation("portrait-primary");
   init();
 }
 
 startWatch();
+window.addEventListener("pageshow", () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) lockScreenOrientation("portrait-primary");
+});

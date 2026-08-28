@@ -1,8 +1,8 @@
 {
   "packageId": "id.my.ozancicak.movie",
   "host": "ozancicak.my.id",
-  "name": "OzancicakMovie",
-  "launcherName": "OzanMovie",
+  "name": "ozancicakmovie",
+  "launcherName": "ozancicakmovie",
   "display": "standalone",
   "themeColor": "#07120F",
   "themeColorDark": "#050B0A",
@@ -16,11 +16,11 @@
   "iconUrl": "https://ozancicak.my.id/icons/icon-512.png",
   "splashScreenFadeOutDuration": 250,
   "signingKey": {
-    "path": "./ozancicakmovie.keystore",
+    "path": "./ozancicakmovie-v2.keystore",
     "alias": "ozancicakmovie"
   },
-  "appVersion": "1.1.0",
-  "appVersionCode": 2,
+  "appVersion": "1.2.0",
+  "appVersionCode": 3,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://ozancicak.my.id/manifest.webmanifest",
@@ -34,11 +34,15 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://ozancicak.my.id/",
   "minSdkVersion": 21,
-  "orientation": "any",
+  "orientation": "portrait",
   "fingerprints": [
     {
       "name": "OzancicakMovie test build",
       "value": "0C:41:EE:8C:F2:66:6D:41:F3:91:E0:48:7C:13:CC:28:54:DE:9B:B5:BE:53:10:77:4B:9F:29:28:07:F8:97:60"
+    },
+    {
+      "name": "ozancicakmovie 1.2 test build",
+      "value": "12:F6:EF:43:CF:4B:63:09:D5:F3:8E:23:FE:8E:CA:0B:68:80:5A:7D:4D:EA:46:A2:58:0C:DA:36:C9:B6:77:9D"
     }
   ],
   "additionalTrustedOrigins": [],

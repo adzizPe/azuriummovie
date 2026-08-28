@@ -8,6 +8,7 @@
 # Konfigurasi rahasia untuk hosting cPanel (dibuat manual di server)
 .api-config.php
 .access-bindings.json
+.access-rate-limit.json
 .access-tokens.txt
 
 # Dependencies and local tooling
@@ -21,6 +22,7 @@ android-twa/.gradle/
 android-twa/app/build/
 android-twa/build/
 android-twa/local.properties
+android-twa/.signing-password.txt
 artifacts/*.apk
 artifacts/*.aab
 artifacts/*.idsig

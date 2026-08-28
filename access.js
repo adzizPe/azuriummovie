@@ -6,6 +6,7 @@
   const nativeFetch = window.fetch.bind(window);
   let token = localStorage.getItem(TOKEN_KEY) || "";
   let deviceId = localStorage.getItem(DEVICE_KEY) || "";
+  let deviceName = "Perangkat ini";
   let accessInfo = null;
   let gate = createGate();
   let modal;
@@ -47,7 +48,36 @@
   }
 
   function normalizeToken(value) {
-    return String(value || "").trim().toUpperCase();
+    return String(value || "").replace(/\D/g, "").slice(0, 4);
+  }
+
+  function labelDevice(model, platform = "Android") {
+    const value = String(model || "").trim();
+    if (!value) return platform || "Perangkat ini";
+    if (/^SM-|SAMSUNG/i.test(value)) return `Samsung ${value}`;
+    if (/PIXEL/i.test(value)) return `Google ${value}`;
+    if (/REDMI|XIAOMI|\bMI\b/i.test(value)) return `Xiaomi ${value}`;
+    if (/POCO/i.test(value)) return `POCO ${value}`;
+    if (/INFINIX/i.test(value)) return `Infinix ${value}`;
+    if (/TECNO/i.test(value)) return `TECNO ${value}`;
+    if (/ONEPLUS/i.test(value)) return `OnePlus ${value}`;
+    return `${platform || "Android"} ${value}`.trim();
+  }
+
+  async function detectDeviceName() {
+    try {
+      if (navigator.userAgentData?.getHighEntropyValues) {
+        const info = await navigator.userAgentData.getHighEntropyValues(["model", "platformVersion"]);
+        const platform = navigator.userAgentData.platform || "Android";
+        if (info.model) return labelDevice(info.model, platform);
+        return platform;
+      }
+    } catch (_) { /* Browser dapat menolak data model demi privasi. */ }
+    const match = navigator.userAgent.match(/Android\s[^;)]*;\s*([^;)]+?)(?:\sBuild\/|[;)])/i);
+    if (match?.[1]) return labelDevice(match[1], "Android");
+    if (/iPhone/i.test(navigator.userAgent)) return "Apple iPhone";
+    if (/iPad/i.test(navigator.userAgent)) return "Apple iPad";
+    return navigator.platform || "Perangkat ini";
   }
 
   function createUi() {
@@ -60,12 +90,12 @@
         <button class="access-close" type="button" aria-label="Tutup" hidden>&times;</button>
         <img src="icons/icon-192.png" alt="" width="66" height="66">
         <span class="eyebrow muted">AKSES PERANGKAT</span>
-        <h2 id="accessTitle">Masukkan token OzancicakMovie</h2>
+        <h2 id="accessTitle">Masukkan token</h2>
         <p class="access-copy">Token cukup dimasukkan satu kali dan akan dikenali di perangkat ini.</p>
         <form class="access-form">
           <label for="accessTokenInput">Token akses</label>
-          <input id="accessTokenInput" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="OZAN-01-XXXXXXXX-XXXXXXXX" maxlength="25" required>
-          <button class="button button-primary" type="submit">Validasi token</button>
+          <input id="accessTokenInput" type="password" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4}" maxlength="4" aria-label="Token akses 4 angka" required>
+          <button class="button button-primary" type="submit">Masuk</button>
         </form>
         <p class="access-message" aria-live="polite"></p>
         <div class="access-detail" hidden></div>
@@ -86,7 +116,7 @@
 
   function updateBadges() {
     document.querySelectorAll("[data-access-label]").forEach(label => {
-      label.textContent = accessInfo ? `${accessInfo.label} · ${accessInfo.maskedToken}` : "Token perangkat";
+      label.textContent = accessInfo ? token : "Token perangkat";
     });
     document.querySelectorAll("[data-access-device]").forEach(button => {
       button.classList.toggle("is-valid", Boolean(accessInfo));
@@ -109,8 +139,9 @@
     }
   }
 
-  function showDeviceInfo() {
+  async function showDeviceInfo() {
     if (!accessInfo) return showLogin();
+    deviceName = await detectDeviceName();
     createUi();
     modal.hidden = false;
     document.documentElement.classList.remove("access-locked");
@@ -118,7 +149,14 @@
     message.textContent = "Token sudah tervalidasi pada perangkat ini.";
     message.dataset.tone = "ok";
     detail.hidden = false;
-    detail.innerHTML = `<span>Perangkat ini menggunakan</span><strong>${accessInfo.label}</strong><code>${token}</code><small>ID perangkat: ${deviceId.slice(0, 8).toUpperCase()}••••</small>`;
+    detail.replaceChildren();
+    const caption = document.createElement("span");
+    caption.textContent = "Token perangkat";
+    const tokenCode = document.createElement("code");
+    tokenCode.textContent = token;
+    const device = document.createElement("small");
+    device.textContent = `Perangkat: ${deviceName}`;
+    detail.append(caption, tokenCode, device);
     closeButton.hidden = false;
     changeButton.hidden = false;
   }
@@ -166,7 +204,7 @@
       message.dataset.tone = "error";
     } finally {
       button.disabled = false;
-      button.textContent = "Validasi token";
+      button.textContent = "Masuk";
     }
   }
 
@@ -196,6 +234,7 @@
   async function validateSavedToken() {
     createUi();
     makeDeviceId();
+    deviceName = await detectDeviceName();
     updateBadges();
     if (!token) {
       showLogin();

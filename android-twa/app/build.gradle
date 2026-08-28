@@ -24,8 +24,8 @@ def twaManifest = [
     applicationId: 'id.my.ozancicak.movie',
     hostName: 'ozancicak.my.id', // The domain being opened in the TWA.
     launchUrl: '/?source=android', // The start path for the TWA. Must be relative to the domain.
-    name: 'OzancicakMovie', // The application name.
-    launcherName: 'OzanMovie', // The name shown on the Android Launcher.
+    name: 'ozancicakmovie', // The application name.
+    launcherName: 'ozancicakmovie', // The name shown on the Android Launcher.
     themeColor: '#07120F', // The color used for the status bar.
     themeColorDark: '#050B0A', // The color used for the dark status bar.
     navigationColor: '#050B0A', // The color used for the navigation bar.
@@ -47,7 +47,7 @@ def twaManifest = [
     // 'customtabs' and 'webview'.
     fallbackType: 'customtabs',
     enableSiteSettingsShortcut: 'true',
-    orientation: 'any',
+    orientation: 'portrait',
 ]
 
 android {
@@ -57,8 +57,8 @@ android {
         applicationId "id.my.ozancicak.movie"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 2
-        versionName "1.1.0"
+        versionCode 3
+        versionName "1.2.0"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name

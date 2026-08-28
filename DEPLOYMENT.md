@@ -1,4 +1,4 @@
-# Deployment OzancicakMovie ke cPanel
+# Deployment ozancicakmovie ke cPanel
 
 Website menggunakan PHP sebagai proxy API. Hosting harus mendukung PHP 8.0 atau
 lebih baru, Apache `mod_rewrite`, dan ekstensi PHP cURL.
@@ -20,6 +20,7 @@ Berkas website yang wajib ikut diperbarui:
 - `pwa.js`
 - `sw.js`
 - `manifest.webmanifest`
+- `ads.txt`
 - `.htaccess`
 - folder `icons/`
 - folder `.well-known/`
@@ -46,8 +47,8 @@ Di cPanel File Manager, aktifkan **Show Hidden Files**, lalu buat file
 return [
     'MOVIEBOX_API_BASE' => 'MASUKKAN_ALAMAT_API_MOVIEBOX_DI_SINI',
     'ACCESS_TOKENS' => [
-        'TOKEN-01', 'TOKEN-02', 'TOKEN-03', 'TOKEN-04', 'TOKEN-05',
-        'TOKEN-06', 'TOKEN-07', 'TOKEN-08', 'TOKEN-09', 'TOKEN-10',
+        '0001', '0002', '0003', '0004', '0005',
+        '0006', '0007', '0008', '0009', '0010',
     ],
 ];
 ```
@@ -65,6 +66,10 @@ Saat token pertama kali digunakan, server otomatis membuat
 `.access-bindings.json`. Pastikan PHP boleh menulis pada document root. File
 tersebut menyimpan hash pengikatan token-perangkat, bukan token mentah, dan
 akses langsungnya diblokir oleh `.htaccess`.
+
+Server juga membuat `.access-rate-limit.json` untuk membatasi percobaan token
+salah. File ini dibuat otomatis, tidak perlu diunggah, dan tidak boleh masuk
+GitHub.
 
 ## Pengujian
 
@@ -93,7 +98,7 @@ Status > Run AutoSSL** agar website memakai HTTPS.
 
 APK uji yang sudah dibuat berada di:
 
-`artifacts/OzancicakMovie-1.1.0-test.apk`
+`artifacts/ozancicakmovie-1.2.0-test.apk`
 
 APK ini memakai Trusted Web Activity dan membuka `https://ozancicak.my.id`
 secara online, sehingga katalog dan video tidak disalin ke APK. Unggah dahulu
@@ -101,7 +106,10 @@ semua berkas website yang disebutkan di atas agar tampilan penuh, service
 worker, ikon, dan verifikasi domain tersedia.
 
 Keystore uji berada hanya di komputer lokal pada
-`android-twa/ozancicakmovie.keystore` dan diabaikan Git. Jangan memakai
+`android-twa/ozancicakmovie-v2.keystore`; kata sandinya tersimpan lokal pada
+`android-twa/.signing-password.txt`. Keduanya diabaikan Git. Karena APK 1.2.0
+memakai sertifikat uji baru, hapus APK uji versi lama sebelum memasang versi
+1.2.0. Jangan memakai
 keystore uji untuk publikasi Play Store. Untuk rilis produksi, buat keystore
 produksi milik sendiri, simpan cadangannya, tanda tangani ulang APK/AAB, lalu
 tambahkan fingerprint SHA-256 produksi ke `.well-known/assetlinks.json`.

@@ -4,15 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050b0a">
-  <meta name="application-name" content="OzancicakMovie">
+  <meta name="application-name" content="ozancicakmovie">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="referrer" content="no-referrer">
-  <title>Menonton — OzancicakMovie</title>
+  <title>Menonton — ozancicakmovie</title>
+  <meta name="google-adsense-account" content="ca-pub-8957974802215246">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8957974802215246" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body class="watch-page">
   <div class="ambient ambient-one"></div>
@@ -70,7 +72,14 @@
         </div>
         <h1 id="detailTitle">Memuat judul...</h1>
         <p id="detailMeta" class="detail-meta"></p>
-        <p id="detailDescription" class="detail-description">Informasi film sedang dimuat.</p>
+        <div class="description-block">
+          <p id="detailDescription" class="detail-description">Informasi film sedang dimuat.</p>
+          <div class="description-actions">
+            <button id="descriptionToggle" type="button" hidden>Selengkapnya</button>
+            <button id="translateDescription" type="button" hidden>Terjemahkan ke Indonesia</button>
+            <span id="translationStatus" aria-live="polite"></span>
+          </div>
+        </div>
         <div id="genreList" class="genre-list"></div>
       </article>
       <aside class="poster-panel">
@@ -93,9 +102,9 @@
     </section>
   </main>
 
-  <script src="access.js?v=2"></script>
+  <script src="access.js?v=3"></script>
   <script src="storage.js?v=2"></script>
-  <script src="watch.js?v=5"></script>
+  <script src="watch.js?v=6"></script>
   <script src="pwa.js?v=1"></script>
 </body>
 </html>

@@ -33,10 +33,24 @@ if (!isset($config['ACCESS_TOKENS']) || !is_array($config['ACCESS_TOKENS']) || c
     accessJson(['error' => 'Sepuluh token akses belum dikonfigurasi di server.'], 503);
 }
 
+$rate = ozan_rate_limit($config);
+if ($rate['blocked']) {
+    header('Retry-After: ' . (int) $rate['retryAfter']);
+    accessJson(['error' => 'Terlalu banyak percobaan. Coba kembali sekitar 15 menit lagi.'], 429);
+}
+
 $identity = ozan_access_identity($config, $token, $deviceId);
 if (!$identity['ok']) {
+    if ((int) $identity['status'] === 401) {
+        $rate = ozan_rate_limit($config, true);
+        if ($rate['blocked']) {
+            header('Retry-After: ' . (int) $rate['retryAfter']);
+            accessJson(['error' => 'Terlalu banyak percobaan. Coba kembali sekitar 15 menit lagi.'], 429);
+        }
+    }
     accessJson(['error' => $identity['error']], (int) $identity['status']);
 }
+ozan_rate_limit($config, false, true);
 
 if ($action === 'activate') {
     $result = ozan_update_bindings($config, function (array &$bindings) use ($identity): array {
@@ -82,4 +96,3 @@ accessJson([
     'maskedToken' => $identity['maskedToken'],
     'device' => substr(strtoupper($deviceId), 0, 8) . '••••',
 ]);
-

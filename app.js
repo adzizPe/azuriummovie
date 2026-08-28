@@ -4,6 +4,10 @@ function apiFetch(input, options) {
   return window.OzanAccess ? window.OzanAccess.fetch(input, options) : window.fetch(input, options);
 }
 
+function keepCatalogPortrait() {
+  screen.orientation?.lock?.("portrait-primary").catch(() => {});
+}
+
 const state = {
   endpoint: "movies",
   page: 1,
@@ -17,6 +21,11 @@ const state = {
 let catalogController = null;
 let suggestionController = null;
 let suggestionTimer = 0;
+let heroItems = [];
+let heroSlideIndex = 0;
+let heroSlideTimer = 0;
+let heroDetailRequest = 0;
+let heroPointerStart = 0;
 
 const elements = {
   catalog: document.querySelector("#catalog"),
@@ -36,6 +45,10 @@ const elements = {
   heroDesc: document.querySelector("#heroDesc"),
   heroPlay: document.querySelector("#heroPlay"),
   heroInfo: document.querySelector("#heroInfo"),
+  heroSliderControls: document.querySelector("#heroSliderControls"),
+  heroPrevious: document.querySelector("#heroPrevious"),
+  heroNext: document.querySelector("#heroNext"),
+  heroDots: document.querySelector("#heroDots"),
   serialTabs: document.querySelector("#serialTabs"),
   libraryPanel: document.querySelector("#libraryPanel"),
   libraryTitle: document.querySelector("#libraryTitle"),
@@ -232,6 +245,13 @@ function renderSections(sections, append = false) {
 
 async function showHero(item) {
   if (!item) return;
+  const request = ++heroDetailRequest;
+  const wasReady = !elements.hero.classList.contains("hero-loading");
+  if (wasReady) {
+    elements.hero.classList.add("hero-changing");
+    await new Promise(resolve => setTimeout(resolve, 180));
+  }
+  if (request !== heroDetailRequest) return;
   elements.heroArt.style.backgroundImage = `url("${text(item.poster).replaceAll('"', '%22')}")`;
   elements.heroTitle.textContent = OzanStore.displayTitle(item.name || item.title || "Pilihan hari ini");
   elements.heroMeta.textContent = [item.year, item.rating ? `★ ${item.rating}` : "", item.country].filter(Boolean).join("  ·  ");
@@ -241,14 +261,54 @@ async function showHero(item) {
   elements.heroInfo.disabled = false;
   elements.heroInfo.onclick = () => { location.href = watchUrl(item); };
   elements.hero.classList.remove("hero-loading");
+  requestAnimationFrame(() => elements.hero.classList.remove("hero-changing"));
 
   if (!item.desc) {
     try {
       const response = await apiFetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
       const result = await response.json();
-      if (result?.data?.description) elements.heroDesc.textContent = result.data.description;
+      if (request === heroDetailRequest && result?.data?.description) elements.heroDesc.textContent = result.data.description;
     } catch (_) { /* Ringkasan cadangan sudah tampil. */ }
   }
+}
+
+function stopHeroSlider() {
+  clearInterval(heroSlideTimer);
+  heroSlideTimer = 0;
+}
+
+function startHeroSlider() {
+  stopHeroSlider();
+  if (heroItems.length < 2 || document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  heroSlideTimer = window.setInterval(() => selectHeroSlide(heroSlideIndex + 1), 7000);
+}
+
+function selectHeroSlide(index, restart = false) {
+  if (!heroItems.length) return;
+  heroSlideIndex = (index + heroItems.length) % heroItems.length;
+  elements.heroDots.querySelectorAll("button").forEach((dot, dotIndex) => {
+    const active = dotIndex === heroSlideIndex;
+    dot.classList.toggle("active", active);
+    dot.setAttribute("aria-current", active ? "true" : "false");
+  });
+  showHero(heroItems[heroSlideIndex]);
+  if (restart) startHeroSlider();
+}
+
+function setupHeroSlider(items) {
+  heroItems = uniqueItems(items).filter(item => item?.subjectId && item?.poster).slice(0, 6);
+  heroSlideIndex = 0;
+  elements.heroDots.replaceChildren();
+  heroItems.forEach((item, index) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.setAttribute("aria-label", `Tampilkan ${OzanStore.displayTitle(item.name || item.title)}`);
+    dot.addEventListener("click", () => selectHeroSlide(index, true));
+    elements.heroDots.append(dot);
+  });
+  elements.heroSliderControls.hidden = heroItems.length < 2;
+  selectHeroSlide(0);
+  startHeroSlider();
 }
 
 function setLoading(active, more = false) {
@@ -352,7 +412,7 @@ async function loadCatalog(append = false) {
     const allItems = sections.flatMap(section => section.items || []);
     if (!sections.length) throw new Error("Tidak ada judul yang ditemukan.");
     renderSections(sections, append);
-    if (!append) showHero(allItems[0]);
+    if (!append) setupHeroSlider(allItems);
     elements.status.hidden = true;
     elements.loadMore.hidden = Boolean(state.query) || (allItems.length === 0 && state.pendingSections.length === 0);
   } catch (error) {
@@ -381,6 +441,25 @@ document.querySelectorAll(".nav-link").forEach(button => {
     loadCatalog(false);
   });
 });
+
+elements.heroPrevious.addEventListener("click", () => selectHeroSlide(heroSlideIndex - 1, true));
+elements.heroNext.addEventListener("click", () => selectHeroSlide(heroSlideIndex + 1, true));
+elements.hero.addEventListener("pointerdown", event => {
+  if (event.pointerType === "mouse") return;
+  heroPointerStart = event.clientX;
+});
+elements.hero.addEventListener("pointerup", event => {
+  if (!heroPointerStart || event.pointerType === "mouse") return;
+  const distance = event.clientX - heroPointerStart;
+  heroPointerStart = 0;
+  if (Math.abs(distance) < 45) return;
+  selectHeroSlide(heroSlideIndex + (distance < 0 ? 1 : -1), true);
+});
+elements.hero.addEventListener("pointercancel", () => { heroPointerStart = 0; });
+elements.hero.addEventListener("mouseenter", stopHeroSlider);
+elements.hero.addEventListener("mouseleave", startHeroSlider);
+elements.hero.addEventListener("focusin", stopHeroSlider);
+elements.hero.addEventListener("focusout", startHeroSlider);
 
 elements.serialTabs.querySelectorAll(".catalog-tab").forEach(button => {
   button.addEventListener("click", () => {
@@ -500,7 +579,12 @@ function refreshLibraryFromStorage() {
 
 window.addEventListener("pageshow", refreshLibraryFromStorage);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) refreshLibraryFromStorage();
+  if (!document.hidden) {
+    refreshLibraryFromStorage();
+    startHeroSlider();
+  } else {
+    stopHeroSlider();
+  }
 });
 
 document.addEventListener("pointerdown", event => {
@@ -530,6 +614,7 @@ function restoreNavigation() {
 
 async function startApp() {
   await window.OzanAccess?.ready();
+  keepCatalogPortrait();
   restoreNavigation();
   updateLibraryCounts();
   syncSerialTabs();
@@ -537,3 +622,4 @@ async function startApp() {
 }
 
 startApp();
+window.addEventListener("pageshow", keepCatalogPortrait);

@@ -5,15 +5,7 @@
 return [
     'MOVIEBOX_API_BASE' => 'https://alamat-api-anda.example/moviebox',
     'ACCESS_TOKENS' => [
-        'GANTI-DENGAN-TOKEN-01',
-        'GANTI-DENGAN-TOKEN-02',
-        'GANTI-DENGAN-TOKEN-03',
-        'GANTI-DENGAN-TOKEN-04',
-        'GANTI-DENGAN-TOKEN-05',
-        'GANTI-DENGAN-TOKEN-06',
-        'GANTI-DENGAN-TOKEN-07',
-        'GANTI-DENGAN-TOKEN-08',
-        'GANTI-DENGAN-TOKEN-09',
-        'GANTI-DENGAN-TOKEN-10',
+        '0001', '0002', '0003', '0004', '0005',
+        '0006', '0007', '0008', '0009', '0010',
     ],
 ];

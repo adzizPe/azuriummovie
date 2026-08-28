@@ -48,6 +48,67 @@ function ozan_binding_path(array $config): string
     return $custom !== '' ? $custom : ozan_root_path() . DIRECTORY_SEPARATOR . '.access-bindings.json';
 }
 
+function ozan_rate_limit_path(array $config): string
+{
+    $custom = trim((string) ($config['ACCESS_RATE_LIMIT_FILE'] ?? ''));
+    return $custom !== '' ? $custom : ozan_root_path() . DIRECTORY_SEPARATOR . '.access-rate-limit.json';
+}
+
+function ozan_rate_key(): string
+{
+    $address = trim((string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+    return hash('sha256', $address);
+}
+
+function ozan_rate_limit(array $config, bool $recordFailure = false, bool $clear = false): array
+{
+    $path = ozan_rate_limit_path($config);
+    $handle = fopen($path, 'c+');
+    if ($handle === false || !flock($handle, LOCK_EX)) {
+        if (is_resource($handle)) {
+            fclose($handle);
+        }
+        return ['blocked' => false, 'retryAfter' => 0];
+    }
+
+    $now = time();
+    $windowSeconds = 15 * 60;
+    $attemptLimit = 8;
+    rewind($handle);
+    $contents = stream_get_contents($handle);
+    $decoded = json_decode(is_string($contents) ? $contents : '', true);
+    $entries = is_array($decoded) ? $decoded : [];
+
+    foreach ($entries as $entryKey => $entry) {
+        if (!is_array($entry) || (int) ($entry['resetAt'] ?? 0) <= $now) {
+            unset($entries[$entryKey]);
+        }
+    }
+
+    $key = ozan_rate_key();
+    if ($clear) {
+        unset($entries[$key]);
+    } elseif ($recordFailure) {
+        $entry = $entries[$key] ?? ['count' => 0, 'resetAt' => $now + $windowSeconds];
+        $entry['count'] = (int) ($entry['count'] ?? 0) + 1;
+        $entry['resetAt'] = max((int) ($entry['resetAt'] ?? 0), $now + $windowSeconds);
+        $entries[$key] = $entry;
+    }
+
+    $entry = $entries[$key] ?? ['count' => 0, 'resetAt' => 0];
+    $blocked = (int) ($entry['count'] ?? 0) >= $attemptLimit;
+    $retryAfter = $blocked ? max(1, (int) ($entry['resetAt'] ?? $now) - $now) : 0;
+
+    rewind($handle);
+    ftruncate($handle, 0);
+    fwrite($handle, json_encode($entries, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+
+    return ['blocked' => $blocked, 'retryAfter' => $retryAfter];
+}
+
 function ozan_read_bindings(array $config): array
 {
     $path = ozan_binding_path($config);
@@ -136,4 +197,3 @@ function ozan_request_access(array $config): array
     $deviceId = (string) ($_SERVER['HTTP_X_OZAN_DEVICE'] ?? '');
     return ozan_validate_bound_access($config, $token, $deviceId);
 }
-
