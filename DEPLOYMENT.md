@@ -24,7 +24,7 @@ Berkas website yang wajib ikut diperbarui:
 - `.htaccess`
 - folder `icons/`
 - folder `.well-known/`
-- folder `api/` (termasuk `_access.php`, `access/`, dan `moviebox/`)
+- folder `api/` (termasuk `_access.php`, `access/`, `moviebox/`, dan `anime/`)
 
 File Cloudflare berikut boleh tidak diunggah karena tidak digunakan oleh cPanel:
 
@@ -46,6 +46,7 @@ Di cPanel File Manager, aktifkan **Show Hidden Files**, lalu buat file
 <?php
 return [
     'MOVIEBOX_API_BASE' => 'MASUKKAN_ALAMAT_API_MOVIEBOX_DI_SINI',
+    'ANIME_API_BASE' => 'MASUKKAN_ALAMAT_API_ANIME_DI_SINI',
     'ACCESS_TOKENS' => [
         '0001', '0002', '0003', '0004', '0005',
         '0006', '0007', '0008', '0009', '0010',
@@ -73,9 +74,10 @@ GitHub.
 
 ## Pengujian
 
-1. Buka `https://ozancicak.my.id/api/moviebox/movies?page=1`. Respons `Token
-   tidak valid` atau `Token belum diaktifkan` adalah hasil yang benar karena
-   endpoint katalog sekarang dilindungi.
+1. Buka `https://ozancicak.my.id/api/moviebox/movies?page=1` dan
+   `https://ozancicak.my.id/api/anime/latest?page=1`. Respons `Token tidak
+   valid` atau `Token belum diaktifkan` adalah hasil yang benar karena endpoint
+   katalog sekarang dilindungi.
 2. Buka `https://ozancicak.my.id/manifest.webmanifest` dan pastikan JSON
    manifest muncul, bukan halaman 404.
 3. Buka `https://ozancicak.my.id/.well-known/assetlinks.json` dan pastikan JSON

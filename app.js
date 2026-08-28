@@ -1,4 +1,5 @@
 const API_BASE = "/api/moviebox";
+const ANIME_API_BASE = "/api/anime";
 
 function apiFetch(input, options) {
   return window.OzanAccess ? window.OzanAccess.fetch(input, options) : window.fetch(input, options);
@@ -16,6 +17,8 @@ const state = {
   requestId: 0,
   pendingSections: [],
   libraryMode: "",
+  animeSeenIds: new Set(),
+  animeSeenTitles: new Set(),
 };
 
 let catalogController = null;
@@ -80,11 +83,13 @@ function apiUrl() {
 
 function watchUrl(item) {
   const query = new URLSearchParams({
-    id: item.subjectId,
+    id: item.providerId || item.subjectId,
     type: item.type || 1,
   });
+  if (item.source && item.source !== "moviebox") query.set("source", item.source);
   if (Number(item.season)) query.set("se", Number(item.season));
   if (Number(item.episode)) query.set("ep", Number(item.episode));
+  if (item.episodeId) query.set("episodeId", item.episodeId);
   return `watch.html?${query}`;
 }
 
@@ -152,7 +157,8 @@ function createCard(item) {
   heading.textContent = displayName;
   const meta = document.createElement("p");
   meta.textContent = [text(item.year), text(item.genre).split(",")[0]].filter(Boolean).join("  ·  ");
-  if (Number(item.episode)) meta.textContent += `${meta.textContent ? "  ·  " : ""}Episode ${Number(item.episode)}`;
+  if (item.episodeLabel) meta.textContent += `${meta.textContent ? "  ·  " : ""}${item.episodeLabel}`;
+  else if (Number(item.episode)) meta.textContent += `${meta.textContent ? "  ·  " : ""}Episode ${Number(item.episode)}`;
   copy.append(heading, meta);
   link.append(poster, copy);
   card.append(link, favorite);
@@ -162,6 +168,86 @@ function createCard(item) {
 function uniqueItems(items) {
   const seen = new Set();
   return items.filter(item => item?.subjectId && !seen.has(item.subjectId) && seen.add(item.subjectId));
+}
+
+function titleKey(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("id-ID")
+    .replace(/\((?:19|20)\d{2}\)/g, " ")
+    .replace(/\b(?:subtitle indonesia|sub indo|batch|bd|bluray|web[- ]?dl)\b/g, " ")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+function animeAliases(item) {
+  const aliases = [item.title, item.series];
+  const description = String(item.description || "");
+  const alternativeBlock = description.match(/Alternative Titles?\s*:?\s*([^\n]+)/i)?.[1] || "";
+  alternativeBlock.split(/\s*(?:,|;|\||\/|English:|Japanese:|Synonyms:)\s*/i).forEach(value => aliases.push(value));
+  return new Set(aliases.map(titleKey).filter(Boolean));
+}
+
+function normalizeMovieboxSections(sections) {
+  return sections.map(section => ({
+    ...section,
+    items: (section.items || []).map(item => ({
+      ...item,
+      source: item.source || "moviebox",
+      providerId: String(item.providerId || item.subjectId || item.id || ""),
+    })),
+  }));
+}
+
+function normalizeAnimeItem(item) {
+  const providerId = String(item.id || item.catId || "");
+  return {
+    subjectId: `anime:${providerId}`,
+    providerId,
+    source: "anime",
+    name: text(item.title || item.series, "Tanpa judul"),
+    title: text(item.title || item.series, "Tanpa judul"),
+    type: 8,
+    poster: text(item.thumbnail),
+    year: text(item.year),
+    genre: Array.isArray(item.genres) ? item.genres.join(", ") : text(item.genre),
+    rating: item.rating,
+    desc: text(item.description),
+    status: text(item.status),
+    aliases: [...animeAliases(item)],
+  };
+}
+
+function mergeAnimeSections(movieboxSections, animeGroups) {
+  const occupiedTitles = state.animeSeenTitles;
+  movieboxSections.flatMap(section => section.items || []).forEach(item => {
+    const key = titleKey(item.name || item.title);
+    if (key) occupiedTitles.add(key);
+  });
+
+  const addedIds = state.animeSeenIds;
+  const sections = [];
+  animeGroups.forEach(group => {
+    const items = (group.items || []).map(normalizeAnimeItem).filter(item => {
+      if (!item.providerId || addedIds.has(item.providerId)) return false;
+      const duplicate = item.aliases.some(alias => occupiedTitles.has(alias));
+      if (duplicate) return false;
+      addedIds.add(item.providerId);
+      item.aliases.forEach(alias => occupiedTitles.add(alias));
+      delete item.aliases;
+      return true;
+    });
+    if (items.length) sections.push({ title: group.title, items });
+  });
+  return [...movieboxSections, ...sections];
+}
+
+async function fetchJsonResponse(url, signal) {
+  const response = await apiFetch(url, { signal });
+  if (!response.ok) throw new Error(`Server merespons ${response.status}`);
+  return response.json();
 }
 
 const libraryLabels = {
@@ -263,7 +349,7 @@ async function showHero(item) {
   elements.hero.classList.remove("hero-loading");
   requestAnimationFrame(() => elements.hero.classList.remove("hero-changing"));
 
-  if (!item.desc) {
+  if (!item.desc && item.source !== "anime") {
     try {
       const response = await apiFetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
       const result = await response.json();
@@ -402,13 +488,36 @@ async function loadCatalog(append = false) {
   if (!append) {
     elements.catalog.replaceChildren();
     elements.count.textContent = "";
+    state.animeSeenIds.clear();
+    state.animeSeenTitles.clear();
   }
   try {
-    const response = await apiFetch(apiUrl(), { signal: catalogController.signal });
-    if (!response.ok) throw new Error(`Server merespons ${response.status}`);
-    const data = await response.json();
+    const animeMode = state.endpoint === "animation";
+    const requests = [fetchJsonResponse(apiUrl(), catalogController.signal)];
+    if (animeMode) {
+      if (state.query) {
+        requests.push(fetchJsonResponse(`${ANIME_API_BASE}/search?q=${encodeURIComponent(state.query)}&page=${state.page}`, catalogController.signal));
+      } else {
+        requests.push(fetchJsonResponse(`${ANIME_API_BASE}/latest?page=${state.page}`, catalogController.signal));
+        if (!append && state.page === 1) requests.push(fetchJsonResponse(`${ANIME_API_BASE}/trending?page=1`, catalogController.signal));
+      }
+    }
+    const results = await Promise.allSettled(requests);
+    if (results.every(result => result.status === "rejected")) throw results[0].reason;
     if (currentRequest !== state.requestId) return;
-    const sections = extractSections(data);
+    const movieboxData = results[0].status === "fulfilled" ? results[0].value : { items: [] };
+    const movieboxSections = normalizeMovieboxSections(extractSections(movieboxData));
+    let sections = movieboxSections;
+    if (animeMode) {
+      const animeGroups = [];
+      if (state.query && results[1]?.status === "fulfilled") {
+        animeGroups.push({ title: `Hasil Anime untuk “${state.query}”`, items: results[1].value.items || [] });
+      } else {
+        if (results[1]?.status === "fulfilled") animeGroups.push({ title: "Anime terbaru dari sumber tambahan", items: results[1].value.items || [] });
+        if (results[2]?.status === "fulfilled") animeGroups.push({ title: "Anime yang sedang populer", items: results[2].value.items || [] });
+      }
+      sections = mergeAnimeSections(movieboxSections, animeGroups);
+    }
     const allItems = sections.flatMap(section => section.items || []);
     if (!sections.length) throw new Error("Tidak ada judul yang ditemukan.");
     renderSections(sections, append);
@@ -572,8 +681,10 @@ function refreshLibraryFromStorage() {
     const favorite = card.querySelector(".favorite-chip");
     const link = card.querySelector(".card-link");
     if (!favorite || !link) return;
-    const id = new URL(link.href, location.href).searchParams.get("id");
-    favorite.classList.toggle("active", OzanStore.isFavorite(id));
+    const linkUrl = new URL(link.href, location.href);
+    const id = linkUrl.searchParams.get("id");
+    const favoriteId = linkUrl.searchParams.get("source") === "anime" ? `anime:${id}` : id;
+    favorite.classList.toggle("active", OzanStore.isFavorite(favoriteId));
   });
 }
 

@@ -65,6 +65,8 @@
     const subjectId = String(item.subjectId || item.id || "");
     return {
       subjectId,
+      providerId: String(item.providerId || item.id || subjectId.replace(/^anime:/, "")),
+      source: String(item.source || (subjectId.startsWith("anime:") ? "anime" : "moviebox")),
       name: displayTitle(item.name || item.title),
       type: Number(item.type || item.subjectType) || 1,
       poster: String(item.poster || item.cover?.url || ""),
@@ -106,6 +108,8 @@
       ...normalized,
       season: Number(playback.season) || 0,
       episode: Number(playback.episode) || 0,
+      episodeId: String(playback.episodeId || ""),
+      episodeLabel: String(playback.episodeLabel || ""),
       watchedAt: Date.now(),
     };
     state.history = upsert(state.history, entry, value => value.subjectId, MAX_HISTORY);
@@ -134,6 +138,8 @@
       ...normalized,
       season: Number(playback.season) || 0,
       episode: Number(playback.episode) || 0,
+      episodeId: String(playback.episodeId || ""),
+      episodeLabel: String(playback.episodeLabel || ""),
       currentTime,
       duration,
       updatedAt: Date.now(),
