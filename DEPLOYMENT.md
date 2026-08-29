@@ -106,7 +106,7 @@ APK uji yang sudah dibuat berada di:
 
 Bundle terbaru untuk diunggah ke Google Play Console:
 
-`artifacts/azuriummovie-1.3.3-play.aab`
+`artifacts/azuriummovie-1.3.4-play.aab`
 
 APK uji lokal terakhir:
 

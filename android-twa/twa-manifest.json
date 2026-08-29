@@ -19,8 +19,8 @@
     "path": "./azuriummovie.keystore",
     "alias": "azuriummovie"
   },
-  "appVersion": "1.3.3",
-  "appVersionCode": 7,
+  "appVersion": "1.3.4",
+  "appVersionCode": 8,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://ozancicak.my.id/manifest.webmanifest",

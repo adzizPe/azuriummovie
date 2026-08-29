@@ -9,7 +9,7 @@ proxy `/api/moviebox`.
 
 Android App Bundle terbaru untuk Google Play:
 
-`../artifacts/azuriummovie-1.3.3-play.aab`
+`../artifacts/azuriummovie-1.3.4-play.aab`
 
 APK uji lokal terakhir:
 

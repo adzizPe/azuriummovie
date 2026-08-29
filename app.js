@@ -28,9 +28,11 @@ let suggestionController = null;
 let suggestionTimer = 0;
 let heroItems = [];
 let heroSlideIndex = 0;
+let heroSlideTimer = 0;
 let heroDetailRequest = 0;
 let heroPointerStart = 0;
 let heroPointerId = null;
+let heroIsVisible = true;
 const heroImageCache = new Map();
 const HERO_IMAGE_TIMEOUT = 4500;
 
@@ -383,6 +385,7 @@ async function commitHero(item, preparedImage, request) {
   elements.hero.classList.remove("hero-loading");
   requestAnimationFrame(() => elements.hero.classList.remove("hero-changing"));
   warmNextHeroImage();
+  startHeroSlider();
   updateHeroDescription(item, request);
   return true;
 }
@@ -398,22 +401,43 @@ async function showHero(item) {
   if (preparedImage !== "timeout") {
     if (preparedImage || elements.hero.classList.contains("hero-loading")) {
       await commitHero(item, preparedImage, request);
+    } else {
+      startHeroSlider();
     }
     return;
   }
 
   if (elements.hero.classList.contains("hero-loading")) await commitHero(item, null, request);
+  else startHeroSlider();
   imagePromise.then(image => {
     if (image && request === heroDetailRequest) commitHero(item, image, request);
   });
 }
 
-function setHeroVisibility(isVisible) {
-  elements.hero.classList.toggle("hero-paused", !isVisible);
+function stopHeroSlider() {
+  clearTimeout(heroSlideTimer);
+  heroSlideTimer = 0;
 }
 
-function selectHeroSlide(index) {
+function startHeroSlider() {
+  stopHeroSlider();
+  if (!heroIsVisible || heroItems.length < 2 || document.hidden) return;
+  heroSlideTimer = window.setTimeout(() => {
+    heroSlideTimer = 0;
+    selectHeroSlide(heroSlideIndex + 1);
+  }, 5000);
+}
+
+function setHeroVisibility(isVisible) {
+  heroIsVisible = isVisible;
+  elements.hero.classList.toggle("hero-paused", !isVisible);
+  if (isVisible) startHeroSlider();
+  else stopHeroSlider();
+}
+
+function selectHeroSlide(index, restart = false) {
   if (!heroItems.length) return;
+  if (restart) stopHeroSlider();
   heroSlideIndex = (index + heroItems.length) % heroItems.length;
   showHero(heroItems[heroSlideIndex]);
 }
@@ -439,6 +463,7 @@ function writeHeroCache(items) {
 }
 
 function setupHeroSlider(items, persistCache = true) {
+  stopHeroSlider();
   heroItems = uniqueItems(items).filter(item => item?.subjectId && item?.poster).slice(0, 6);
   if (persistCache) writeHeroCache(heroItems);
   heroSlideIndex = 0;
@@ -613,7 +638,7 @@ elements.hero.addEventListener("pointerup", event => {
   heroPointerId = null;
   elements.hero.classList.remove("hero-dragging");
   if (Math.abs(distance) < 45) return;
-  selectHeroSlide(heroSlideIndex + (distance < 0 ? 1 : -1));
+  selectHeroSlide(heroSlideIndex + (distance < 0 ? 1 : -1), true);
 });
 elements.hero.addEventListener("pointercancel", () => {
   heroPointerStart = 0;
@@ -623,7 +648,7 @@ elements.hero.addEventListener("pointercancel", () => {
 elements.hero.addEventListener("keydown", event => {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
   event.preventDefault();
-  selectHeroSlide(heroSlideIndex + (event.key === "ArrowRight" ? 1 : -1));
+  selectHeroSlide(heroSlideIndex + (event.key === "ArrowRight" ? 1 : -1), true);
 });
 
 elements.serialTabs.querySelectorAll(".catalog-tab").forEach(button => {
@@ -748,7 +773,8 @@ window.addEventListener("pageshow", refreshLibraryFromStorage);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     refreshLibraryFromStorage();
-  }
+    if (heroIsVisible) startHeroSlider();
+  } else stopHeroSlider();
 });
 
 if ("IntersectionObserver" in window) {
