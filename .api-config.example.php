@@ -6,6 +6,9 @@ return [
     'MOVIEBOX_API_BASE' => 'https://alamat-api-anda.example/moviebox',
     'ANIME_API_BASE' => 'https://alamat-api-anda.example/anime',
     'DONGHUA_API_BASE' => 'https://alamat-api-anda.example/donghua',
+    'IPTV_API_BASE' => 'https://alamat-api-anda.example/iptv',
+    // Opsional tetapi disarankan: string acak panjang untuk menandatangani relay HLS.
+    'IPTV_STREAM_SECRET' => 'ganti-dengan-string-acak-panjang',
     'ACCESS_TOKENS' => [
         '0001', '0002', '0003', '0004', '0005',
         '0006', '0007', '0008', '0009', '0010',

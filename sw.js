@@ -1,14 +1,16 @@
-const SHELL_CACHE = "azuriummovie-shell-v14";
+const SHELL_CACHE = "azuriummovie-shell-v15";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/watch.html",
+  "/live.html",
   "/privacy.html",
-  "/styles.css?v=13",
-  "/access.js?v=8",
-  "/storage.js?v=5",
-  "/app.js?v=12",
+  "/styles.css?v=14",
+  "/access.js?v=9",
+  "/storage.js?v=6",
+  "/app.js?v=13",
   "/watch.js?v=9",
+  "/live.js?v=1",
   "/pwa.js?v=3",
   "/manifest.webmanifest",
   "/icons/launchericon-48x48.png",
@@ -42,7 +44,9 @@ self.addEventListener("fetch", event => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match(url.pathname.endsWith("watch.html") ? "/watch.html" : "/index.html")),
+      fetch(request).catch(() => caches.match(
+        url.pathname.endsWith("live.html") ? "/live.html" : url.pathname.endsWith("watch.html") ? "/watch.html" : "/index.html",
+      )),
     );
     return;
   }

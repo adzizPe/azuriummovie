@@ -15,6 +15,7 @@ Pertahankan nama dan susunan folder seperti di proyek lokal.
 
 - [ ] `index.html`
 - [ ] `watch.html`
+- [ ] `live.html`
 - [ ] `privacy.html`
 
 ### Tampilan dan JavaScript
@@ -23,6 +24,7 @@ Pertahankan nama dan susunan folder seperti di proyek lokal.
 - [ ] `access.js`
 - [ ] `app.js`
 - [ ] `watch.js`
+- [ ] `live.js`
 - [ ] `storage.js`
 - [ ] `pwa.js`
 - [ ] `sw.js`
@@ -66,6 +68,8 @@ Upload seluruh folder `api/` beserta file tersembunyinya:
 - [ ] `api/anime/.htaccess`
 - [ ] `api/donghua/index.php`
 - [ ] `api/donghua/.htaccess`
+- [ ] `api/iptv/index.php`
+- [ ] `api/iptv/.htaccess`
 - [ ] `api/translate/index.php`
 
 ## 2. Wajib ada di cPanel, tetapi bersifat rahasia
@@ -78,6 +82,8 @@ Upload secara manual melalui cPanel dan pastikan isinya memuat:
 - `MOVIEBOX_API_BASE`
 - `ANIME_API_BASE`
 - `DONGHUA_API_BASE`
+- `IPTV_API_BASE`
+- `IPTV_STREAM_SECRET` (opsional tetapi disarankan untuk tanda tangan relay HLS)
 - `ACCESS_TOKENS`
 - `PLAY_REVIEW_TOKENS` (khusus peninjau Google Play dan tidak diikat ke satu perangkat)
 
@@ -148,6 +154,9 @@ Mengupload seluruh folder `icons/` tetap aman, tetapi file di atas tidak wajib.
 - [ ] Token dapat digunakan dan katalog berhasil dimuat.
 - [ ] Pencarian, detail, video, kualitas, subtitle, episode, favorit, riwayat, dan lanjut menonton berfungsi.
 - [ ] Kategori `Donghua` tampil terpisah dan salah satu episodenya dapat diputar.
+- [ ] Kategori `Live TV` menampilkan grup dan channel Indonesia.
+- [ ] Pencarian channel, favorit, riwayat, detail, pemutar live, dan unduhan M3U berfungsi.
+- [ ] Uji minimal satu channel live; channel yang sedang offline boleh gagal dan harus menampilkan pesan yang jelas.
 - [ ] `https://ozancicak.my.id/.api-config.php` tidak dapat dibuka oleh publik.
 
 ## Ringkasan cepat

@@ -1,6 +1,7 @@
 const API_BASE = "/api/moviebox";
 const ANIME_API_BASE = "/api/anime";
 const DONGHUA_API_BASE = "/api/donghua";
+const IPTV_API_BASE = "/api/iptv";
 const HERO_CACHE_KEY = "azuriummovie:hero-cache:v1";
 const HERO_CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -22,6 +23,8 @@ const state = {
   libraryMode: "",
   animeSeenIds: new Set(),
   animeSeenTitles: new Set(),
+  iptvGroup: "",
+  iptvGroups: [],
 };
 
 let catalogController = null;
@@ -56,6 +59,7 @@ const elements = {
   heroPlay: document.querySelector("#heroPlay"),
   heroInfo: document.querySelector("#heroInfo"),
   serialTabs: document.querySelector("#serialTabs"),
+  iptvTabs: document.querySelector("#iptvTabs"),
   libraryPanel: document.querySelector("#libraryPanel"),
   libraryTitle: document.querySelector("#libraryTitle"),
   libraryGrid: document.querySelector("#libraryGrid"),
@@ -67,7 +71,7 @@ const elements = {
   historyCount: document.querySelector("#historyCount"),
 };
 
-const labels = { movies: "Film untukmu", tv: "Serial TV pilihan", tvshows: "Drama pendek", animation: "Dunia anime", donghua: "Donghua pilihan", kids: "Pilihan keluarga" };
+const labels = { movies: "Film untukmu", tv: "Serial TV pilihan", tvshows: "Drama pendek", animation: "Dunia anime", donghua: "Donghua pilihan", kids: "Pilihan keluarga", iptv: "TV Indonesia live" };
 
 function syncSerialTabs() {
   const serialNavActive = document.querySelector(".nav-link.active")?.dataset.endpoint === "tv";
@@ -77,6 +81,7 @@ function syncSerialTabs() {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", String(active));
   });
+  elements.iptvTabs.hidden = state.endpoint !== "iptv" || Boolean(state.query);
 }
 
 function apiUrl() {
@@ -85,6 +90,9 @@ function apiUrl() {
 }
 
 function watchUrl(item) {
+  if (item.source === "iptv") {
+    return `live.html?id=${encodeURIComponent(item.providerId || item.subjectId.replace(/^iptv:/, ""))}`;
+  }
   const query = new URLSearchParams({
     id: item.providerId || item.subjectId,
     type: item.type || 1,
@@ -101,9 +109,11 @@ function text(value, fallback = "") {
 }
 
 function createCard(item) {
+  const liveChannel = item.source === "iptv";
   const displayName = AzuriumStore.displayTitle(item.name || item.title);
   const card = document.createElement("article");
   card.className = "movie-card";
+  card.classList.toggle("live-card", liveChannel);
   const link = document.createElement("a");
   link.className = "card-link";
   link.href = watchUrl(item);
@@ -121,7 +131,7 @@ function createCard(item) {
 
   const rating = document.createElement("span");
   rating.className = "card-rating";
-  rating.innerHTML = `<b>★</b> ${text(item.rating, "—")}`;
+  rating.innerHTML = liveChannel ? '<b class="live-pulse"></b> LIVE' : `<b>★</b> ${text(item.rating, "—")}`;
 
   const play = document.createElement("span");
   play.className = "play-chip";
@@ -225,6 +235,68 @@ function normalizeExternalItem(item, source) {
 
 function normalizeAnimeItem(item) {
   return normalizeExternalItem(item, "anime");
+}
+
+function normalizeIptvChannel(channel) {
+  const providerId = String(channel.id || "");
+  const group = text(channel.group, "TV Indonesia");
+  return {
+    subjectId: `iptv:${providerId}`,
+    providerId,
+    source: "iptv",
+    name: text(channel.name, "Channel TV"),
+    title: text(channel.name, "Channel TV"),
+    type: 10,
+    poster: text(channel.logo),
+    year: "LIVE",
+    genre: group,
+    rating: "LIVE",
+    desc: `Siaran langsung ${group}. Tonton channel ini secara online.`,
+  };
+}
+
+function iptvSections(data) {
+  const channels = (data?.channels || []).map(normalizeIptvChannel).filter(item => item.providerId);
+  if (state.query) return channels.length ? [{ title: `Channel untuk “${state.query}”`, items: channels }] : [];
+  if (state.iptvGroup) return channels.length ? [{ title: state.iptvGroup, items: channels }] : [];
+  const grouped = new Map();
+  channels.forEach(channel => {
+    const group = channel.genre || "Lainnya";
+    if (!grouped.has(group)) grouped.set(group, []);
+    grouped.get(group).push(channel);
+  });
+  const preferredOrder = new Map(state.iptvGroups.map((group, index) => [group.name, index]));
+  return [...grouped.entries()]
+    .sort(([left], [right]) => (preferredOrder.get(left) ?? 999) - (preferredOrder.get(right) ?? 999) || left.localeCompare(right, "id"))
+    .map(([title, items]) => ({ title, items }));
+}
+
+function renderIptvGroupTabs(groups) {
+  if (Array.isArray(groups) && groups.length) state.iptvGroups = groups;
+  const fragment = document.createDocumentFragment();
+  const total = state.iptvGroups.reduce((sum, item) => sum + Number(item.count || 0), 0);
+  const choices = [{ name: "", label: "Semua", count: total }, ...state.iptvGroups.map(item => ({ ...item, label: item.name }))];
+  choices.forEach(group => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "iptv-tab";
+    button.classList.toggle("active", state.iptvGroup === group.name);
+    button.setAttribute("aria-pressed", String(state.iptvGroup === group.name));
+    button.textContent = group.count ? `${group.label} ${group.count}` : group.label;
+    button.addEventListener("click", () => {
+      if (state.iptvGroup === group.name && !state.query) return;
+      state.iptvGroup = group.name;
+      state.query = "";
+      state.page = 1;
+      elements.searchInput.value = "";
+      elements.searchForm.classList.remove("has-value", "is-open");
+      elements.title.textContent = group.name ? `Live TV · ${group.name}` : labels.iptv;
+      renderIptvGroupTabs();
+      loadCatalog(false);
+    });
+    fragment.append(button);
+  });
+  elements.iptvTabs.replaceChildren(fragment);
 }
 
 function providerItems(data) {
@@ -406,7 +478,9 @@ async function commitHero(item, preparedImage, request) {
   if (request !== heroDetailRequest) return false;
   if (preparedImage) elements.heroArt.src = preparedImage.currentSrc || preparedImage.src;
   elements.heroTitle.textContent = AzuriumStore.displayTitle(item.name || item.title || "Pilihan hari ini");
-  elements.heroMeta.textContent = [item.year, item.rating ? `★ ${item.rating}` : "", item.country].filter(Boolean).join("  ·  ");
+  elements.heroMeta.textContent = item.source === "iptv"
+    ? `● LIVE  ·  ${text(item.genre, "TV Indonesia")}`
+    : [item.year, item.rating ? `★ ${item.rating}` : "", item.country].filter(Boolean).join("  ·  ");
   elements.heroDesc.textContent = text(item.desc, `${text(item.genre, "Film pilihan")} untuk menemani waktu santaimu.`);
   elements.heroPlay.href = watchUrl(item);
   elements.heroPlay.classList.remove("disabled");
@@ -560,7 +634,9 @@ async function fetchSuggestions(query) {
   try {
     const suggestionUrl = state.endpoint === "donghua"
       ? `${DONGHUA_API_BASE}/search?q=${encodeURIComponent(query)}&count=7`
-      : `${API_BASE}/suggest?q=${encodeURIComponent(query)}`;
+      : state.endpoint === "iptv"
+        ? `${IPTV_API_BASE}/search?q=${encodeURIComponent(query)}`
+        : `${API_BASE}/suggest?q=${encodeURIComponent(query)}`;
     const response = await apiFetch(suggestionUrl, {
       signal: suggestionController.signal,
       cache: "no-store",
@@ -568,7 +644,8 @@ async function fetchSuggestions(query) {
     if (!response.ok) throw new Error("Saran tidak tersedia");
     const result = await response.json();
     if (elements.searchInput.value.trim() !== query) return;
-    const words = (result.data?.items || providerItems(result)).map(item => text(item.word || item.name || item.title)).filter(Boolean);
+    const suggestionItems = state.endpoint === "iptv" ? (result.channels || []) : (result.data?.items || providerItems(result));
+    const words = suggestionItems.map(item => text(item.word || item.name || item.title)).filter(Boolean);
     renderSuggestions([...new Set(words)]);
   } catch (error) {
     if (error.name !== "AbortError") hideSuggestions();
@@ -600,7 +677,17 @@ async function loadCatalog(append = false) {
   try {
     const animeMode = state.endpoint === "animation";
     const donghuaMode = state.endpoint === "donghua";
-    const requests = donghuaMode
+    const iptvMode = state.endpoint === "iptv";
+    const requests = iptvMode
+      ? [fetchJsonResponse(
+          state.query
+            ? `${IPTV_API_BASE}/search?q=${encodeURIComponent(state.query)}`
+            : state.iptvGroup
+              ? `${IPTV_API_BASE}/group?g=${encodeURIComponent(state.iptvGroup)}`
+              : `${IPTV_API_BASE}/channels`,
+          catalogController.signal,
+        )]
+      : donghuaMode
       ? [fetchJsonResponse(
           state.query
             ? `${DONGHUA_API_BASE}/search?q=${encodeURIComponent(state.query)}&page=${state.page}&count=50`
@@ -608,6 +695,7 @@ async function loadCatalog(append = false) {
           catalogController.signal,
         )]
       : [fetchJsonResponse(apiUrl(), catalogController.signal)];
+    if (iptvMode && !append) requests.push(fetchJsonResponse(`${IPTV_API_BASE}/groups`, catalogController.signal));
     if (donghuaMode && !state.query && !append && state.page === 1) {
       requests.push(fetchJsonResponse(`${DONGHUA_API_BASE}/favorite?page=1&count=50`, catalogController.signal));
       requests.push(fetchJsonResponse(`${DONGHUA_API_BASE}/slide?type=latest`, catalogController.signal));
@@ -624,8 +712,12 @@ async function loadCatalog(append = false) {
     if (results.every(result => result.status === "rejected")) throw results[0].reason;
     if (currentRequest !== state.requestId) return;
     const movieboxData = results[0].status === "fulfilled" ? results[0].value : { items: [] };
-    const movieboxSections = donghuaMode ? [] : normalizeMovieboxSections(extractSections(movieboxData));
-    let sections = donghuaMode ? donghuaSections(results) : movieboxSections;
+    const movieboxSections = donghuaMode || iptvMode ? [] : normalizeMovieboxSections(extractSections(movieboxData));
+    let sections = iptvMode ? iptvSections(movieboxData) : donghuaMode ? donghuaSections(results) : movieboxSections;
+    if (iptvMode && results[1]?.status === "fulfilled") {
+      renderIptvGroupTabs(results[1].value.groups || []);
+      sections = iptvSections(movieboxData);
+    }
     if (animeMode) {
       const animeGroups = [];
       if (state.query && results[1]?.status === "fulfilled") {
@@ -638,10 +730,11 @@ async function loadCatalog(append = false) {
     }
     const allItems = sections.flatMap(section => section.items || []);
     if (!sections.length) throw new Error("Tidak ada judul yang ditemukan.");
+    elements.hero.classList.toggle("hero-live", iptvMode);
     renderSections(sections, append);
     if (!append) setupHeroSlider(allItems);
     elements.status.hidden = true;
-    elements.loadMore.hidden = Boolean(state.query) || (allItems.length === 0 && state.pendingSections.length === 0);
+    elements.loadMore.hidden = Boolean(state.query) || (iptvMode ? state.pendingSections.length === 0 : (allItems.length === 0 && state.pendingSections.length === 0));
   } catch (error) {
     if (error.name === "AbortError") return;
     if (currentRequest === state.requestId && !append) showError(`${error.message} Periksa koneksi lalu coba kembali.`);
@@ -657,6 +750,8 @@ document.querySelectorAll(".nav-link").forEach(button => {
     state.endpoint = button.dataset.endpoint;
     AzuriumStore.setPreference("lastEndpoint", state.endpoint);
     if (state.endpoint === "tv") AzuriumStore.setPreference("serialEndpoint", "tv");
+    if (state.endpoint === "iptv") state.iptvGroup = "";
+    elements.searchInput.placeholder = state.endpoint === "iptv" ? "Cari channel TV..." : "Cari film atau serial...";
     closeLibrary();
     state.page = 1;
     state.query = "";
@@ -809,7 +904,7 @@ function refreshLibraryFromStorage() {
     if (!favorite || !link) return;
     const linkUrl = new URL(link.href, location.href);
     const id = linkUrl.searchParams.get("id");
-    const source = linkUrl.searchParams.get("source") || "moviebox";
+    const source = linkUrl.pathname.endsWith("/live.html") ? "iptv" : (linkUrl.searchParams.get("source") || "moviebox");
     const favoriteId = source === "moviebox" ? id : `${source}:${id}`;
     favorite.classList.toggle("active", AzuriumStore.isFavorite(favoriteId));
   });
@@ -840,6 +935,7 @@ elements.loadMore.addEventListener("click", () => {
     state.pendingSections = [];
     renderSections(remaining, true);
     elements.loadMore.textContent = "Muat halaman berikutnya";
+    if (state.endpoint === "iptv") elements.loadMore.hidden = true;
     return;
   }
   state.page += 1;
@@ -848,11 +944,13 @@ elements.loadMore.addEventListener("click", () => {
 
 function restoreNavigation() {
   const preferences = AzuriumStore.getPreferences();
-  const savedEndpoint = labels[preferences.lastEndpoint] ? preferences.lastEndpoint : "movies";
+  const requestedEndpoint = new URLSearchParams(location.search).get("category");
+  const savedEndpoint = labels[requestedEndpoint] ? requestedEndpoint : labels[preferences.lastEndpoint] ? preferences.lastEndpoint : "movies";
   state.endpoint = savedEndpoint === "tv" && preferences.serialEndpoint === "tvshows" ? "tvshows" : savedEndpoint;
   const mainEndpoint = ["tv", "tvshows"].includes(state.endpoint) ? "tv" : state.endpoint;
   document.querySelectorAll(".nav-link").forEach(button => button.classList.toggle("active", button.dataset.endpoint === mainEndpoint));
   elements.title.textContent = labels[state.endpoint];
+  elements.searchInput.placeholder = state.endpoint === "iptv" ? "Cari channel TV..." : "Cari film atau serial...";
 }
 
 async function startApp() {

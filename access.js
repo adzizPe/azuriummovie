@@ -287,6 +287,7 @@
   window.AzuriumAccess = {
     ready: () => gate.promise,
     fetch: authorizedFetch,
+    requestHeaders: () => ({ "X-Azurium-Token": token, "X-Azurium-Device": deviceId }),
     showDeviceInfo,
   };
 
