@@ -29,8 +29,8 @@ $token = azurium_normalize_token((string) ($body['token'] ?? ''));
 $deviceId = trim((string) ($body['deviceId'] ?? ''));
 $config = azurium_load_private_config();
 
-if (!isset($config['ACCESS_TOKENS']) || !is_array($config['ACCESS_TOKENS']) || count($config['ACCESS_TOKENS']) !== 10) {
-    accessJson(['error' => 'Sepuluh token akses belum dikonfigurasi di server.'], 503);
+if (!isset($config['ACCESS_TOKENS']) || !is_array($config['ACCESS_TOKENS']) || count($config['ACCESS_TOKENS']) < 1) {
+    accessJson(['error' => 'Token akses belum dikonfigurasi di server.'], 503);
 }
 
 $rate = azurium_rate_limit($config);

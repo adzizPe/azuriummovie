@@ -51,6 +51,8 @@ return [
     'ACCESS_TOKENS' => [
         '0001', '0002', '0003', '0004', '0005',
         '0006', '0007', '0008', '0009', '0010',
+        '0011', '0012', '0013', '0014', '0015',
+        '0016', '0017', '0018', '0019', '0020',
     ],
     'PLAY_REVIEW_TOKENS' => ['9999'],
 ];
@@ -60,7 +62,7 @@ File `.api-config.php` sudah tercantum dalam `.gitignore` dan akses langsungnya
 diblokir oleh `.htaccess`. Jangan memasukkannya ke repository atau membagikan
 isinya melalui screenshot.
 
-Versi privat yang sudah berisi API dan 10 token tersedia secara lokal di
+Versi privat yang sudah berisi API dan 20 token pengguna tersedia secara lokal di
 `.api-config.php`. Unggah file privat itu secara manual melalui cPanel. Daftar
 token pemilik tersedia di `.access-tokens.txt`; file daftar tersebut jangan
 diunggah ke `public_html` maupun GitHub.
