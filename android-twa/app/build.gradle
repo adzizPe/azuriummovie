@@ -21,11 +21,11 @@ plugins {
 }
 
 def twaManifest = [
-    applicationId: 'id.my.ozancicak.movie',
+    applicationId: 'id.my.azurium.movie',
     hostName: 'ozancicak.my.id', // The domain being opened in the TWA.
     launchUrl: '/?source=android', // The start path for the TWA. Must be relative to the domain.
-    name: 'ozancicakmovie', // The application name.
-    launcherName: 'ozancicakmovie', // The name shown on the Android Launcher.
+    name: 'azuriummovie', // The application name.
+    launcherName: 'azuriummovie', // The name shown on the Android Launcher.
     themeColor: '#07120F', // The color used for the status bar.
     themeColorDark: '#050B0A', // The color used for the dark status bar.
     navigationColor: '#050B0A', // The color used for the navigation bar.
@@ -52,13 +52,13 @@ def twaManifest = [
 
 android {
     compileSdkVersion 36
-    namespace "id.my.ozancicak.movie"
+    namespace "id.my.azurium.movie"
     defaultConfig {
-        applicationId "id.my.ozancicak.movie"
+        applicationId "id.my.azurium.movie"
         minSdkVersion 21
         targetSdkVersion 36
-        versionCode 3
-        versionName "1.2.0"
+        versionCode 5
+        versionName "1.3.1"
 
         // The name for the application
         resValue "string", "appName", twaManifest.name

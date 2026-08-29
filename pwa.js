@@ -19,7 +19,7 @@
   window.addEventListener("beforeinstallprompt", event => {
     event.preventDefault();
     installPrompt = event;
-    if (installCard && sessionStorage.getItem("ozan-install-dismissed") !== "1") installCard.hidden = false;
+    if (installCard && sessionStorage.getItem("azurium-install-dismissed") !== "1") installCard.hidden = false;
   });
 
   installButton?.addEventListener("click", async () => {
@@ -31,7 +31,7 @@
   });
 
   dismissButton?.addEventListener("click", () => {
-    sessionStorage.setItem("ozan-install-dismissed", "1");
+    sessionStorage.setItem("azurium-install-dismissed", "1");
     hideInstall();
   });
 

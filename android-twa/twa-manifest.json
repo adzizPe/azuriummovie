@@ -1,8 +1,8 @@
 {
-  "packageId": "id.my.ozancicak.movie",
+  "packageId": "id.my.azurium.movie",
   "host": "ozancicak.my.id",
-  "name": "ozancicakmovie",
-  "launcherName": "ozancicakmovie",
+  "name": "azuriummovie",
+  "launcherName": "azuriummovie",
   "display": "standalone",
   "themeColor": "#07120F",
   "themeColorDark": "#050B0A",
@@ -13,14 +13,14 @@
   "backgroundColor": "#050B0A",
   "enableNotifications": false,
   "startUrl": "/?source=android",
-  "iconUrl": "https://ozancicak.my.id/icons/icon-512.png",
+  "iconUrl": "https://ozancicak.my.id/icons/launchericon-512x512.png",
   "splashScreenFadeOutDuration": 250,
   "signingKey": {
-    "path": "./ozancicakmovie-v2.keystore",
-    "alias": "ozancicakmovie"
+    "path": "./azuriummovie.keystore",
+    "alias": "azuriummovie"
   },
-  "appVersion": "1.2.0",
-  "appVersionCode": 3,
+  "appVersion": "1.3.1",
+  "appVersionCode": 5,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://ozancicak.my.id/manifest.webmanifest",
@@ -37,12 +37,8 @@
   "orientation": "portrait",
   "fingerprints": [
     {
-      "name": "OzancicakMovie test build",
-      "value": "0C:41:EE:8C:F2:66:6D:41:F3:91:E0:48:7C:13:CC:28:54:DE:9B:B5:BE:53:10:77:4B:9F:29:28:07:F8:97:60"
-    },
-    {
-      "name": "ozancicakmovie 1.2 test build",
-      "value": "12:F6:EF:43:CF:4B:63:09:D5:F3:8E:23:FE:8E:CA:0B:68:80:5A:7D:4D:EA:46:A2:58:0C:DA:36:C9:B6:77:9D"
+      "name": "azuriummovie test build",
+      "value": "18:7A:87:6A:7B:D2:DD:37:1B:32:93:A3:7C:15:A4:E7:C8:36:7A:68:50:C6:52:27:60:AC:BC:67:4B:3F:19:40"
     }
   ],
   "additionalTrustedOrigins": [],

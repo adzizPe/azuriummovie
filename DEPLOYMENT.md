@@ -1,4 +1,4 @@
-# Deployment ozancicakmovie ke cPanel
+# Deployment azuriummovie ke cPanel
 
 Website menggunakan PHP sebagai proxy API. Hosting harus mendukung PHP 8.0 atau
 lebih baru, Apache `mod_rewrite`, dan ekstensi PHP cURL.
@@ -100,7 +100,7 @@ Status > Run AutoSSL** agar website memakai HTTPS.
 
 APK uji yang sudah dibuat berada di:
 
-`artifacts/ozancicakmovie-1.2.0-test.apk`
+`artifacts/azuriummovie-1.3.1-test.apk`
 
 APK ini memakai Trusted Web Activity dan membuka `https://ozancicak.my.id`
 secara online, sehingga katalog dan video tidak disalin ke APK. Unggah dahulu
@@ -108,10 +108,12 @@ semua berkas website yang disebutkan di atas agar tampilan penuh, service
 worker, ikon, dan verifikasi domain tersedia.
 
 Keystore uji berada hanya di komputer lokal pada
-`android-twa/ozancicakmovie-v2.keystore`; kata sandinya tersimpan lokal pada
+`android-twa/azuriummovie.keystore`; kata sandinya tersimpan lokal pada
 `android-twa/.signing-password.txt`. Keduanya diabaikan Git. Karena APK 1.2.0
 memakai sertifikat uji baru, hapus APK uji versi lama sebelum memasang versi
 1.2.0. Jangan memakai
-keystore uji untuk publikasi Play Store. Untuk rilis produksi, buat keystore
+keystore uji untuk publikasi Play Store. Karena identitas Android sekarang
+`id.my.azurium.movie`, APK lama perlu dihapus sebelum memasang versi 1.3.1.
+Untuk rilis produksi, buat keystore
 produksi milik sendiri, simpan cadangannya, tanda tangani ulang APK/AAB, lalu
 tambahkan fingerprint SHA-256 produksi ke `.well-known/assetlinks.json`.

@@ -26,7 +26,7 @@ let originalDescription = "";
 let descriptionTranslated = false;
 let translationRequest = 0;
 
-const savedPreferences = OzanStore.getPreferences();
+const savedPreferences = AzuriumStore.getPreferences();
 let autoplayEnabled = savedPreferences.autoplay !== false;
 
 const el = {
@@ -73,7 +73,7 @@ function endpoint(path, query = {}) {
 }
 
 async function getJson(path, query) {
-  const response = await (window.OzanAccess ? window.OzanAccess.fetch(endpoint(path, query), {
+  const response = await (window.AzuriumAccess ? window.AzuriumAccess.fetch(endpoint(path, query), {
     cache: path === "stream" ? "no-store" : "default",
   }) : fetch(endpoint(path, query), {
     cache: path === "stream" ? "no-store" : "default",
@@ -129,7 +129,7 @@ function setSourceStatus(message, tone = "") {
 
 function refreshWatchFavorite() {
   if (!currentDetail) return;
-  const active = OzanStore.isFavorite(currentDetail.subjectId);
+  const active = AzuriumStore.isFavorite(currentDetail.subjectId);
   el.favorite.classList.toggle("active", active);
   el.favorite.setAttribute("aria-label", active ? "Hapus dari favorit" : "Tambahkan ke favorit");
   el.favorite.querySelector("span").textContent = active ? "Tersimpan" : "Favorit";
@@ -183,7 +183,7 @@ async function translateCurrentDescription(automatic = false) {
   try {
     const translatedParts = [];
     for (const part of translationChunks(originalDescription)) {
-      const response = await window.OzanAccess.fetch("/api/translate/", {
+      const response = await window.AzuriumAccess.fetch("/api/translate/", {
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
@@ -209,9 +209,9 @@ async function translateCurrentDescription(automatic = false) {
 }
 
 function renderDetail(detail) {
-  const displayTitle = OzanStore.displayTitle(detail.title || detail.name);
+  const displayTitle = AzuriumStore.displayTitle(detail.title || detail.name);
   subjectType = Number(detail.subjectType) || subjectType;
-  currentDetail = OzanStore.normalizeItem({
+  currentDetail = AzuriumStore.normalizeItem({
     ...detail,
     subjectId: storageSubjectId,
     providerId: subjectId,
@@ -219,7 +219,7 @@ function renderDetail(detail) {
     title: displayTitle,
     name: displayTitle,
   });
-  document.title = `${displayTitle} — ozancicakmovie`;
+  document.title = `${displayTitle} — azuriummovie`;
   el.title.textContent = displayTitle;
   el.type.textContent = contentSource === "anime" ? "ANIME" : subjectType === 7 ? "DRAMA PENDEK" : subjectType === 2 ? "SERIAL" : "FILM";
   el.rating.textContent = `★ ${detail.imdbRatingValue || "—"}`;
@@ -235,7 +235,7 @@ function renderDetail(detail) {
     chip.textContent = genre.trim();
     el.genres.append(chip);
   });
-  OzanStore.recordHistory(currentDetail);
+  AzuriumStore.recordHistory(currentDetail);
   refreshWatchFavorite();
   if (looksEnglish(originalDescription)) window.setTimeout(() => translateCurrentDescription(true), 250);
 }
@@ -261,7 +261,7 @@ async function attachSubtitles(subtitles) {
   el.video.querySelectorAll("track").forEach(track => track.remove());
   subtitleBlobUrls.forEach(URL.revokeObjectURL);
   subtitleBlobUrls = [];
-  const preferredLanguage = OzanStore.getPreferences().subtitle;
+  const preferredLanguage = AzuriumStore.getPreferences().subtitle;
   const candidates = [...(subtitles || [])]
     .sort((a, b) => Number(b.indonesian) - Number(a.indonesian))
     .slice(0, 5);
@@ -300,7 +300,7 @@ async function attachSubtitles(subtitles) {
 }
 
 function findPreferredSource() {
-  const quality = String(OzanStore.getPreferences().quality || "").toLowerCase();
+  const quality = String(AzuriumStore.getPreferences().quality || "").toLowerCase();
   if (!quality) return 0;
   const found = currentSources.findIndex(source => String(source.resolution || "").toLowerCase() === quality);
   return found >= 0 ? found : 0;
@@ -474,7 +474,7 @@ function saveCurrentProgress(force = false, started = false) {
   const now = Date.now();
   if (!force && now - lastProgressSavedAt < 5000) return;
   lastProgressSavedAt = now;
-  OzanStore.saveProgress(currentDetail, {
+  AzuriumStore.saveProgress(currentDetail, {
     season: currentSeason,
     episode: currentEpisode,
     episodeId: contentSource === "anime" ? currentAnimeEpisodes[currentAnimeEpisodeIndex]?.id : "",
@@ -522,7 +522,7 @@ async function loadStream(se = 0, ep = 0, shouldPlay = false) {
   updateAddress();
   updateEpisodeActions();
   if (isEpisodic()) selectEpisode(se, ep);
-  if (currentDetail) OzanStore.recordHistory(currentDetail, { season: se, episode: ep });
+  if (currentDetail) AzuriumStore.recordHistory(currentDetail, { season: se, episode: ep });
 
   try {
     const data = await getJson("stream", { id: subjectId, se: se || undefined, ep: ep || undefined });
@@ -540,7 +540,7 @@ async function loadStream(se = 0, ep = 0, shouldPlay = false) {
     });
     el.quality.disabled = false;
 
-    const resume = OzanStore.getProgress(storageSubjectId, se, ep);
+    const resume = AzuriumStore.getProgress(storageSubjectId, se, ep);
     setSource(findPreferredSource(), false, resume?.currentTime || 0);
     const subtitleInfo = await attachSubtitles(data.subtitles || []);
     const subtitleStatus = subtitleInfo.hasIndonesian
@@ -580,7 +580,7 @@ async function loadAnimeStream(index = 0, shouldPlay = false) {
   selectEpisode(0, currentEpisode);
   updateAddress();
   updateEpisodeActions();
-  OzanStore.recordHistory(currentDetail, {
+  AzuriumStore.recordHistory(currentDetail, {
     season: 0,
     episode: currentEpisode,
     episodeId: episode.id,
@@ -608,7 +608,7 @@ async function loadAnimeStream(index = 0, shouldPlay = false) {
       el.quality.append(option);
     });
     el.quality.disabled = false;
-    const resume = OzanStore.getProgress(storageSubjectId, 0, currentEpisode);
+    const resume = AzuriumStore.getProgress(storageSubjectId, 0, currentEpisode);
     setSource(findPreferredSource(), false, resume?.currentTime || 0);
     el.video.querySelectorAll("track").forEach(track => track.remove());
     setSourceStatus(`${currentSources.length} kualitas · subtitle mengikuti sumber video`, "ok");
@@ -630,7 +630,7 @@ function navigateEpisode(offset, shouldPlay = true) {
 }
 
 function createRecommendation(item) {
-  const displayTitle = OzanStore.displayTitle(item.name || item.title);
+  const displayTitle = AzuriumStore.displayTitle(item.name || item.title);
   const card = document.createElement("article");
   card.className = "movie-card";
   const link = document.createElement("a");
@@ -658,7 +658,7 @@ function createRecommendation(item) {
   favorite.className = "favorite-chip";
   favorite.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S4 16 4 9.6A4.1 4.1 0 0 1 11.1 6.8L12 8l.9-1.2A4.1 4.1 0 0 1 20 9.6c0 6.4-8 10.9-8 10.9Z"/></svg>';
   const updateFavorite = () => {
-    const active = OzanStore.isFavorite(item.subjectId);
+    const active = AzuriumStore.isFavorite(item.subjectId);
     favorite.classList.toggle("active", active);
     favorite.setAttribute("aria-label", active ? "Hapus dari favorit" : "Tambahkan ke favorit");
   };
@@ -666,7 +666,7 @@ function createRecommendation(item) {
   favorite.addEventListener("click", event => {
     event.preventDefault();
     event.stopPropagation();
-    OzanStore.toggleFavorite(item);
+    AzuriumStore.toggleFavorite(item);
     updateFavorite();
   });
   wrap.append(img, rating);
@@ -756,7 +756,7 @@ async function init() {
       renderDetail(animeDetailFromResponse(result));
       renderAnimeEpisodes(result.items || []);
       if (!currentAnimeEpisodes.length) throw new Error("Episode Anime belum tersedia.");
-      const saved = OzanStore.getLatestProgress(storageSubjectId);
+      const saved = AzuriumStore.getLatestProgress(storageSubjectId);
       let initialIndex = 0;
       if (requestedEpisodeId) {
         const found = currentAnimeEpisodes.findIndex(item => String(item.id) === requestedEpisodeId);
@@ -782,7 +782,7 @@ async function init() {
       renderEpisodes(seasons);
       const first = episodeSequence()[0] || { se: 1, ep: 1 };
       const requested = { season: requestedSeason, episode: requestedEpisode };
-      const saved = OzanStore.getLatestProgress(storageSubjectId);
+      const saved = AzuriumStore.getLatestProgress(storageSubjectId);
       const initial = validEpisode(requested) ? requested : validEpisode(saved) ? saved : { season: first.se, episode: first.ep };
       await loadStream(Number(initial.season), Number(initial.episode));
     } else {
@@ -798,7 +798,7 @@ async function init() {
 
 el.quality.addEventListener("change", () => {
   const selected = currentSources[Number(el.quality.value)];
-  if (selected?.resolution) OzanStore.setPreference("quality", selected.resolution);
+  if (selected?.resolution) AzuriumStore.setPreference("quality", selected.resolution);
   setSource(Number(el.quality.value), true);
 });
 el.retry.addEventListener("click", () => loadStream(currentSeason, currentEpisode, true));
@@ -806,12 +806,12 @@ el.previousEpisode.addEventListener("click", () => navigateEpisode(-1));
 el.nextEpisode.addEventListener("click", () => navigateEpisode(1));
 el.autoplay.addEventListener("click", () => {
   autoplayEnabled = !autoplayEnabled;
-  OzanStore.setPreference("autoplay", autoplayEnabled);
+  AzuriumStore.setPreference("autoplay", autoplayEnabled);
   updateEpisodeActions();
 });
 el.favorite.addEventListener("click", () => {
   if (!currentDetail) return;
-  OzanStore.toggleFavorite(currentDetail);
+  AzuriumStore.toggleFavorite(currentDetail);
   refreshWatchFavorite();
 });
 el.descriptionToggle.addEventListener("click", () => {
@@ -827,7 +827,7 @@ el.video.addEventListener("canplay", () => { el.placeholder.hidden = true; });
 el.video.addEventListener("play", () => saveCurrentProgress(true, true));
 el.video.addEventListener("timeupdate", () => saveCurrentProgress());
 el.video.addEventListener("pause", () => saveCurrentProgress(true));
-el.video.addEventListener("volumechange", () => OzanStore.setPreference("volume", el.video.volume));
+el.video.addEventListener("volumechange", () => AzuriumStore.setPreference("volume", el.video.volume));
 el.video.addEventListener("ended", () => {
   saveCurrentProgress(true);
   if (isEpisodic() && autoplayEnabled && navigateEpisode(1, true)) return;
@@ -853,7 +853,7 @@ el.video.addEventListener("error", () => {
 el.video.textTracks?.addEventListener("change", () => {
   if (attachingSubtitles) return;
   const showing = Array.from(el.video.textTracks).find(track => track.mode === "showing");
-  OzanStore.setPreference("subtitle", showing?.language || "off");
+  AzuriumStore.setPreference("subtitle", showing?.language || "off");
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) saveCurrentProgress(true);
@@ -866,7 +866,7 @@ window.addEventListener("beforeunload", () => {
 window.addEventListener("pagehide", () => saveCurrentProgress(true));
 
 async function startWatch() {
-  await window.OzanAccess?.ready();
+  await window.AzuriumAccess?.ready();
   lockScreenOrientation("portrait-primary");
   init();
 }

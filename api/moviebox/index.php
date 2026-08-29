@@ -48,8 +48,8 @@ if (!in_array($endpoint, ALLOWED_ENDPOINTS, true)) {
     sendJson(['error' => 'Endpoint not found'], 404);
 }
 
-$config = ozan_load_private_config();
-$access = ozan_request_access($config);
+$config = azurium_load_private_config();
+$access = azurium_request_access($config);
 if (!$access['ok']) {
     sendJson(['error' => $access['error']], (int) $access['status']);
 }
@@ -107,7 +107,7 @@ curl_setopt_array($curl, [
     CURLOPT_TIMEOUT => 30,
     CURLOPT_ENCODING => '',
     CURLOPT_HTTPHEADER => ['Accept: application/json'],
-    CURLOPT_USERAGENT => 'OzancicakMovie/1.0',
+    CURLOPT_USERAGENT => 'AzuriumMovie/1.0',
 ]);
 
 $body = curl_exec($curl);

@@ -25,24 +25,24 @@ if (!is_array($body)) {
 }
 
 $action = strtolower(trim((string) ($body['action'] ?? 'status')));
-$token = ozan_normalize_token((string) ($body['token'] ?? ''));
+$token = azurium_normalize_token((string) ($body['token'] ?? ''));
 $deviceId = trim((string) ($body['deviceId'] ?? ''));
-$config = ozan_load_private_config();
+$config = azurium_load_private_config();
 
 if (!isset($config['ACCESS_TOKENS']) || !is_array($config['ACCESS_TOKENS']) || count($config['ACCESS_TOKENS']) !== 10) {
     accessJson(['error' => 'Sepuluh token akses belum dikonfigurasi di server.'], 503);
 }
 
-$rate = ozan_rate_limit($config);
+$rate = azurium_rate_limit($config);
 if ($rate['blocked']) {
     header('Retry-After: ' . (int) $rate['retryAfter']);
     accessJson(['error' => 'Terlalu banyak percobaan. Coba kembali sekitar 15 menit lagi.'], 429);
 }
 
-$identity = ozan_access_identity($config, $token, $deviceId);
+$identity = azurium_access_identity($config, $token, $deviceId);
 if (!$identity['ok']) {
     if ((int) $identity['status'] === 401) {
-        $rate = ozan_rate_limit($config, true);
+        $rate = azurium_rate_limit($config, true);
         if ($rate['blocked']) {
             header('Retry-After: ' . (int) $rate['retryAfter']);
             accessJson(['error' => 'Terlalu banyak percobaan. Coba kembali sekitar 15 menit lagi.'], 429);
@@ -50,10 +50,10 @@ if (!$identity['ok']) {
     }
     accessJson(['error' => $identity['error']], (int) $identity['status']);
 }
-ozan_rate_limit($config, false, true);
+azurium_rate_limit($config, false, true);
 
 if ($action === 'activate') {
-    $result = ozan_update_bindings($config, function (array &$bindings) use ($identity): array {
+    $result = azurium_update_bindings($config, function (array &$bindings) use ($identity): array {
         $existing = $bindings[$identity['tokenHash']] ?? null;
         if (is_array($existing) && !hash_equals((string) ($existing['deviceHash'] ?? ''), $identity['deviceHash'])) {
             return ['ok' => false, 'status' => 409, 'error' => 'Token ini sudah digunakan pada perangkat lain.', 'write' => false];
@@ -69,11 +69,11 @@ if ($action === 'activate') {
         accessJson(['error' => $result['error']], (int) $result['status']);
     }
 } elseif ($action === 'release') {
-    $bound = ozan_validate_bound_access($config, $token, $deviceId);
+    $bound = azurium_validate_bound_access($config, $token, $deviceId);
     if (!$bound['ok']) {
         accessJson(['error' => $bound['error']], (int) $bound['status']);
     }
-    $result = ozan_update_bindings($config, function (array &$bindings) use ($identity): array {
+    $result = azurium_update_bindings($config, function (array &$bindings) use ($identity): array {
         unset($bindings[$identity['tokenHash']]);
         return ['ok' => true, 'write' => true];
     });
@@ -82,7 +82,7 @@ if ($action === 'activate') {
     }
     accessJson(['ok' => true, 'released' => true]);
 } elseif ($action === 'status') {
-    $bound = ozan_validate_bound_access($config, $token, $deviceId);
+    $bound = azurium_validate_bound_access($config, $token, $deviceId);
     if (!$bound['ok']) {
         accessJson(['error' => $bound['error']], (int) $bound['status']);
     }

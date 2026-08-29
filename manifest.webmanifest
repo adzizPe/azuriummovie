@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "ozancicakmovie",
-  "short_name": "ozancicakmovie",
+  "name": "azuriummovie",
+  "short_name": "azuriummovie",
   "description": "Film, serial TV, drama pendek, anime, dan tontonan keluarga dalam satu aplikasi.",
   "lang": "id-ID",
   "dir": "ltr",
@@ -16,16 +16,16 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/launchericon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/launchericon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }

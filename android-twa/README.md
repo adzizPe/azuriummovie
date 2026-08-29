@@ -1,4 +1,4 @@
-# Android ozancicakmovie
+# Android azuriummovie
 
 Folder ini berisi pembungkus Android Trusted Web Activity (TWA) untuk
 `https://ozancicak.my.id`. Aplikasi tidak menyimpan katalog, poster, subtitle,
@@ -9,7 +9,7 @@ proxy `/api/moviebox`.
 
 APK uji yang siap dipasang:
 
-`../artifacts/ozancicakmovie-1.2.0-test.apk`
+`../artifacts/azuriummovie-1.3.1-test.apk`
 
 APK dan keystore sengaja diabaikan Git. Kode sumber Android, konfigurasi TWA,
 PWA, dan Digital Asset Links tetap boleh masuk repository publik karena tidak
@@ -17,7 +17,7 @@ berisi alamat upstream API maupun konfigurasi privat cPanel.
 
 Versi 1.2.0 memakai keystore uji baru. Hapus APK uji versi lama dari perangkat
 sebelum memasang versi ini karena tanda tangannya berbeda. Keystore dan kata
-sandi lokal berada di `ozancicakmovie-v2.keystore` serta
+sandi lokal berada di `azuriummovie.keystore` serta
 `.signing-password.txt` dan keduanya tidak boleh diunggah.
 
 ## Sebelum memasang APK

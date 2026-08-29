@@ -18,8 +18,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     translateJson(['error' => 'Method not allowed'], 405);
 }
 
-$config = ozan_load_private_config();
-$access = ozan_request_access($config);
+$config = azurium_load_private_config();
+$access = azurium_request_access($config);
 if (!$access['ok']) {
     translateJson(['error' => $access['error']], (int) $access['status']);
 }
@@ -48,7 +48,7 @@ curl_setopt_array($curl, [
     CURLOPT_CONNECTTIMEOUT => 8,
     CURLOPT_TIMEOUT => 18,
     CURLOPT_HTTPHEADER => ['Accept: application/json'],
-    CURLOPT_USERAGENT => 'ozancicakmovie/1.0',
+    CURLOPT_USERAGENT => 'azuriummovie/1.0',
 ]);
 $responseBody = curl_exec($curl);
 $curlError = curl_error($curl);

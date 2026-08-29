@@ -1,17 +1,19 @@
-const SHELL_CACHE = "ozancicakmovie-shell-v6";
+const SHELL_CACHE = "azuriummovie-shell-v9";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/watch.html",
-  "/styles.css?v=7",
-  "/access.js?v=3",
-  "/storage.js?v=3",
-  "/app.js?v=6",
-  "/watch.js?v=7",
-  "/pwa.js?v=1",
+  "/styles.css?v=9",
+  "/access.js?v=5",
+  "/storage.js?v=4",
+  "/app.js?v=8",
+  "/watch.js?v=8",
+  "/pwa.js?v=2",
   "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/icons/launchericon-48x48.png",
+  "/icons/launchericon-96x96.png",
+  "/icons/launchericon-192x192.png",
+  "/icons/launchericon-512x512.png"
 ];
 
 self.addEventListener("install", event => {

@@ -1,7 +1,8 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "ozancicakmovie:user-library:v1";
+  const STORAGE_KEY = "azuriummovie:user-library:v1";
+  const LEGACY_STORAGE_KEY = "ozancicakmovie:user-library:v1";
   const MAX_HISTORY = 60;
   const MAX_PROGRESS = 30;
   const TITLE_ALIASES = new Map([
@@ -29,7 +30,12 @@
 
   function read() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      const savedValue = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || "null";
+      const saved = JSON.parse(savedValue);
+      if (savedValue !== "null" && !localStorage.getItem(STORAGE_KEY)) {
+        localStorage.setItem(STORAGE_KEY, savedValue);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
       if (!saved || typeof saved !== "object") return clone(defaults);
       return {
         favorites: Array.isArray(saved.favorites) ? saved.favorites : [],
@@ -58,7 +64,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (_) { /* Website tetap bisa digunakan jika penyimpanan browser diblokir. */ }
-    window.dispatchEvent(new CustomEvent("ozan:librarychange"));
+    window.dispatchEvent(new CustomEvent("azurium:librarychange"));
   }
 
   function normalizeItem(item = {}) {
@@ -192,7 +198,7 @@
     persist();
   }
 
-  window.OzanStore = {
+  window.AzuriumStore = {
     displayTitle,
     reload,
     normalizeItem,
@@ -214,6 +220,6 @@
   window.addEventListener("storage", event => {
     if (event.key !== STORAGE_KEY) return;
     reload();
-    window.dispatchEvent(new CustomEvent("ozan:librarychange"));
+    window.dispatchEvent(new CustomEvent("azurium:librarychange"));
   });
 })();

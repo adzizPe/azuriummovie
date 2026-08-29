@@ -1,8 +1,10 @@
 const API_BASE = "/api/moviebox";
 const ANIME_API_BASE = "/api/anime";
+const HERO_CACHE_KEY = "azuriummovie:hero-cache:v1";
+const HERO_CACHE_TTL = 24 * 60 * 60 * 1000;
 
 function apiFetch(input, options) {
-  return window.OzanAccess ? window.OzanAccess.fetch(input, options) : window.fetch(input, options);
+  return window.AzuriumAccess ? window.AzuriumAccess.fetch(input, options) : window.fetch(input, options);
 }
 
 function keepCatalogPortrait() {
@@ -29,6 +31,8 @@ let heroSlideIndex = 0;
 let heroSlideTimer = 0;
 let heroDetailRequest = 0;
 let heroPointerStart = 0;
+const heroImageCache = new Map();
+const HERO_IMAGE_TIMEOUT = 4500;
 
 const elements = {
   catalog: document.querySelector("#catalog"),
@@ -98,7 +102,7 @@ function text(value, fallback = "") {
 }
 
 function createCard(item) {
-  const displayName = OzanStore.displayTitle(item.name || item.title);
+  const displayName = AzuriumStore.displayTitle(item.name || item.title);
   const card = document.createElement("article");
   card.className = "movie-card";
   const link = document.createElement("a");
@@ -128,7 +132,7 @@ function createCard(item) {
   favorite.className = "favorite-chip";
   favorite.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5S4 16 4 9.6A4.1 4.1 0 0 1 11.1 6.8L12 8l.9-1.2A4.1 4.1 0 0 1 20 9.6c0 6.4-8 10.9-8 10.9Z"/></svg>';
   const refreshFavorite = () => {
-    const active = OzanStore.isFavorite(item.subjectId);
+    const active = AzuriumStore.isFavorite(item.subjectId);
     favorite.classList.toggle("active", active);
     favorite.setAttribute("aria-label", active ? `Hapus ${displayName} dari favorit` : `Tambahkan ${displayName} ke favorit`);
     favorite.title = active ? "Hapus dari favorit" : "Tambahkan ke favorit";
@@ -137,7 +141,7 @@ function createCard(item) {
   favorite.addEventListener("click", event => {
     event.preventDefault();
     event.stopPropagation();
-    OzanStore.toggleFavorite(item);
+    AzuriumStore.toggleFavorite(item);
     refreshFavorite();
   });
   poster.append(image, rating, play);
@@ -257,16 +261,16 @@ const libraryLabels = {
 };
 
 function getLibraryItems(mode) {
-  if (mode === "continue") return OzanStore.getContinue();
-  if (mode === "favorites") return OzanStore.getFavorites();
-  if (mode === "history") return OzanStore.getHistory();
+  if (mode === "continue") return AzuriumStore.getContinue();
+  if (mode === "favorites") return AzuriumStore.getFavorites();
+  if (mode === "history") return AzuriumStore.getHistory();
   return [];
 }
 
 function updateLibraryCounts() {
-  elements.continueCount.textContent = OzanStore.getContinue().length;
-  elements.favoriteCount.textContent = OzanStore.getFavorites().length;
-  elements.historyCount.textContent = OzanStore.getHistory().length;
+  elements.continueCount.textContent = AzuriumStore.getContinue().length;
+  elements.favoriteCount.textContent = AzuriumStore.getFavorites().length;
+  elements.historyCount.textContent = AzuriumStore.getHistory().length;
 }
 
 function closeLibrary() {
@@ -329,17 +333,51 @@ function renderSections(sections, append = false) {
   elements.count.textContent = renderedTotal ? `${renderedTotal} judul dimuat` : "";
 }
 
-async function showHero(item) {
-  if (!item) return;
-  const request = ++heroDetailRequest;
+function prepareHeroImage(url, highPriority = false) {
+  const source = text(url);
+  if (!source) return Promise.resolve(null);
+  if (heroImageCache.has(source)) return heroImageCache.get(source);
+  const promise = new Promise(resolve => {
+    const image = new Image();
+    image.decoding = "async";
+    image.fetchPriority = highPriority ? "high" : "auto";
+    image.onload = async () => {
+      try { await image.decode(); } catch (_) { /* onload sudah memastikan gambar dapat dipakai. */ }
+      resolve(image);
+    };
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
+  heroImageCache.set(source, promise);
+  return promise;
+}
+
+function warmNextHeroImage() {
+  const connection = navigator.connection;
+  if (heroItems.length < 2 || connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || "")) return;
+  const nextItem = heroItems[(heroSlideIndex + 1) % heroItems.length];
+  window.setTimeout(() => prepareHeroImage(nextItem?.poster), 700);
+}
+
+async function updateHeroDescription(item, request) {
+  if (item.desc || item.source === "anime") return;
+  try {
+    const response = await apiFetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
+    const result = await response.json();
+    if (request === heroDetailRequest && result?.data?.description) elements.heroDesc.textContent = result.data.description;
+  } catch (_) { /* Ringkasan cadangan sudah tampil. */ }
+}
+
+async function commitHero(item, preparedImage, request) {
+  if (request !== heroDetailRequest) return false;
   const wasReady = !elements.hero.classList.contains("hero-loading");
-  if (wasReady) {
+  if (wasReady && preparedImage) {
     elements.hero.classList.add("hero-changing");
     await new Promise(resolve => setTimeout(resolve, 180));
   }
-  if (request !== heroDetailRequest) return;
-  elements.heroArt.style.backgroundImage = `url("${text(item.poster).replaceAll('"', '%22')}")`;
-  elements.heroTitle.textContent = OzanStore.displayTitle(item.name || item.title || "Pilihan hari ini");
+  if (request !== heroDetailRequest) return false;
+  if (preparedImage) elements.heroArt.src = preparedImage.currentSrc || preparedImage.src;
+  elements.heroTitle.textContent = AzuriumStore.displayTitle(item.name || item.title || "Pilihan hari ini");
   elements.heroMeta.textContent = [item.year, item.rating ? `★ ${item.rating}` : "", item.country].filter(Boolean).join("  ·  ");
   elements.heroDesc.textContent = text(item.desc, `${text(item.genre, "Film pilihan")} untuk menemani waktu santaimu.`);
   elements.heroPlay.href = watchUrl(item);
@@ -348,14 +386,30 @@ async function showHero(item) {
   elements.heroInfo.onclick = () => { location.href = watchUrl(item); };
   elements.hero.classList.remove("hero-loading");
   requestAnimationFrame(() => elements.hero.classList.remove("hero-changing"));
+  elements.heroSliderControls.hidden = heroItems.length < 2;
+  warmNextHeroImage();
+  if (!heroSlideTimer) startHeroSlider();
+  updateHeroDescription(item, request);
+  return true;
+}
 
-  if (!item.desc && item.source !== "anime") {
-    try {
-      const response = await apiFetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
-      const result = await response.json();
-      if (request === heroDetailRequest && result?.data?.description) elements.heroDesc.textContent = result.data.description;
-    } catch (_) { /* Ringkasan cadangan sudah tampil. */ }
+async function showHero(item) {
+  if (!item) return;
+  const request = ++heroDetailRequest;
+  const imagePromise = prepareHeroImage(item.poster, elements.hero.classList.contains("hero-loading"));
+  const timeout = new Promise(resolve => window.setTimeout(() => resolve("timeout"), HERO_IMAGE_TIMEOUT));
+  const preparedImage = await Promise.race([imagePromise, timeout]);
+  if (request !== heroDetailRequest) return;
+
+  if (preparedImage !== "timeout") {
+    if (preparedImage || elements.hero.classList.contains("hero-loading")) await commitHero(item, preparedImage, request);
+    return;
   }
+
+  if (elements.hero.classList.contains("hero-loading")) await commitHero(item, null, request);
+  imagePromise.then(image => {
+    if (image && request === heroDetailRequest) commitHero(item, image, request);
+  });
 }
 
 function stopHeroSlider() {
@@ -371,6 +425,7 @@ function startHeroSlider() {
 
 function selectHeroSlide(index, restart = false) {
   if (!heroItems.length) return;
+  if (restart) stopHeroSlider();
   heroSlideIndex = (index + heroItems.length) % heroItems.length;
   elements.heroDots.querySelectorAll("button").forEach((dot, dotIndex) => {
     const active = dotIndex === heroSlideIndex;
@@ -378,23 +433,43 @@ function selectHeroSlide(index, restart = false) {
     dot.setAttribute("aria-current", active ? "true" : "false");
   });
   showHero(heroItems[heroSlideIndex]);
-  if (restart) startHeroSlider();
 }
 
-function setupHeroSlider(items) {
+function readHeroCache() {
+  try {
+    const cache = JSON.parse(localStorage.getItem(HERO_CACHE_KEY) || "{}");
+    const entry = cache[state.endpoint];
+    if (!entry || Date.now() - Number(entry.savedAt) > HERO_CACHE_TTL || !Array.isArray(entry.items)) return [];
+    return entry.items;
+  } catch (_) {
+    return [];
+  }
+}
+
+function writeHeroCache(items) {
+  if (state.query || state.page !== 1 || !items.length) return;
+  try {
+    const cache = JSON.parse(localStorage.getItem(HERO_CACHE_KEY) || "{}");
+    cache[state.endpoint] = { savedAt: Date.now(), items: items.slice(0, 6) };
+    localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(cache));
+  } catch (_) { /* Hero tetap bekerja jika penyimpanan browser dibatasi. */ }
+}
+
+function setupHeroSlider(items, persistCache = true) {
+  stopHeroSlider();
   heroItems = uniqueItems(items).filter(item => item?.subjectId && item?.poster).slice(0, 6);
+  if (persistCache) writeHeroCache(heroItems);
   heroSlideIndex = 0;
   elements.heroDots.replaceChildren();
   heroItems.forEach((item, index) => {
     const dot = document.createElement("button");
     dot.type = "button";
-    dot.setAttribute("aria-label", `Tampilkan ${OzanStore.displayTitle(item.name || item.title)}`);
+    dot.setAttribute("aria-label", `Tampilkan ${AzuriumStore.displayTitle(item.name || item.title)}`);
     dot.addEventListener("click", () => selectHeroSlide(index, true));
     elements.heroDots.append(dot);
   });
-  elements.heroSliderControls.hidden = heroItems.length < 2;
+  elements.heroSliderControls.hidden = true;
   selectHeroSlide(0);
-  startHeroSlider();
 }
 
 function setLoading(active, more = false) {
@@ -537,8 +612,8 @@ document.querySelectorAll(".nav-link").forEach(button => {
     document.querySelector(".nav-link.active")?.classList.remove("active");
     button.classList.add("active");
     state.endpoint = button.dataset.endpoint;
-    OzanStore.setPreference("lastEndpoint", state.endpoint);
-    if (state.endpoint === "tv") OzanStore.setPreference("serialEndpoint", "tv");
+    AzuriumStore.setPreference("lastEndpoint", state.endpoint);
+    if (state.endpoint === "tv") AzuriumStore.setPreference("serialEndpoint", "tv");
     closeLibrary();
     state.page = 1;
     state.query = "";
@@ -574,8 +649,8 @@ elements.serialTabs.querySelectorAll(".catalog-tab").forEach(button => {
   button.addEventListener("click", () => {
     if (state.endpoint === button.dataset.endpoint && !state.query) return;
     state.endpoint = button.dataset.endpoint;
-    OzanStore.setPreference("lastEndpoint", state.endpoint);
-    OzanStore.setPreference("serialEndpoint", state.endpoint);
+    AzuriumStore.setPreference("lastEndpoint", state.endpoint);
+    AzuriumStore.setPreference("serialEndpoint", state.endpoint);
     closeLibrary();
     state.page = 1;
     state.query = "";
@@ -665,16 +740,16 @@ document.querySelectorAll(".library-tab").forEach(button => {
 elements.closeLibrary.addEventListener("click", closeLibrary);
 elements.clearHistory.addEventListener("click", () => {
   if (!window.confirm("Hapus seluruh riwayat tontonan di perangkat ini?")) return;
-  OzanStore.clearHistory();
+  AzuriumStore.clearHistory();
 });
 
-window.addEventListener("ozan:librarychange", () => {
+window.addEventListener("azurium:librarychange", () => {
   updateLibraryCounts();
   if (state.libraryMode && !elements.libraryPanel.hidden) renderLibrary(state.libraryMode);
 });
 
 function refreshLibraryFromStorage() {
-  OzanStore.reload();
+  AzuriumStore.reload();
   updateLibraryCounts();
   if (state.libraryMode && !elements.libraryPanel.hidden) renderLibrary(state.libraryMode);
   document.querySelectorAll(".movie-card").forEach(card => {
@@ -684,7 +759,7 @@ function refreshLibraryFromStorage() {
     const linkUrl = new URL(link.href, location.href);
     const id = linkUrl.searchParams.get("id");
     const favoriteId = linkUrl.searchParams.get("source") === "anime" ? `anime:${id}` : id;
-    favorite.classList.toggle("active", OzanStore.isFavorite(favoriteId));
+    favorite.classList.toggle("active", AzuriumStore.isFavorite(favoriteId));
   });
 }
 
@@ -715,7 +790,7 @@ elements.loadMore.addEventListener("click", () => {
 });
 
 function restoreNavigation() {
-  const preferences = OzanStore.getPreferences();
+  const preferences = AzuriumStore.getPreferences();
   const savedEndpoint = labels[preferences.lastEndpoint] ? preferences.lastEndpoint : "movies";
   state.endpoint = savedEndpoint === "tv" && preferences.serialEndpoint === "tvshows" ? "tvshows" : savedEndpoint;
   const mainEndpoint = ["tv", "tvshows"].includes(state.endpoint) ? "tv" : state.endpoint;
@@ -724,11 +799,13 @@ function restoreNavigation() {
 }
 
 async function startApp() {
-  await window.OzanAccess?.ready();
   keepCatalogPortrait();
   restoreNavigation();
   updateLibraryCounts();
   syncSerialTabs();
+  const cachedHero = readHeroCache();
+  if (cachedHero.length) setupHeroSlider(cachedHero, false);
+  await window.AzuriumAccess?.ready();
   loadCatalog();
 }
 

@@ -1,11 +1,17 @@
 (() => {
   "use strict";
 
-  const TOKEN_KEY = "ozancicakmovie:access-token:v1";
-  const DEVICE_KEY = "ozancicakmovie:device-id:v1";
+  const TOKEN_KEY = "azuriummovie:access-token:v1";
+  const DEVICE_KEY = "azuriummovie:device-id:v1";
+  const LEGACY_TOKEN_KEY = "ozancicakmovie:access-token:v1";
+  const LEGACY_DEVICE_KEY = "ozancicakmovie:device-id:v1";
   const nativeFetch = window.fetch.bind(window);
-  let token = localStorage.getItem(TOKEN_KEY) || "";
-  let deviceId = localStorage.getItem(DEVICE_KEY) || "";
+  let token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY) || "";
+  let deviceId = localStorage.getItem(DEVICE_KEY) || localStorage.getItem(LEGACY_DEVICE_KEY) || "";
+  if (token && !localStorage.getItem(TOKEN_KEY)) localStorage.setItem(TOKEN_KEY, token);
+  if (deviceId && !localStorage.getItem(DEVICE_KEY)) localStorage.setItem(DEVICE_KEY, deviceId);
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_DEVICE_KEY);
   let deviceName = "Perangkat ini";
   let accessInfo = null;
   let gate = createGate();
@@ -88,7 +94,7 @@
     modal.innerHTML = `
       <section class="access-card" role="dialog" aria-modal="true" aria-labelledby="accessTitle">
         <button class="access-close" type="button" aria-label="Tutup" hidden>&times;</button>
-        <img src="icons/icon-192.png" alt="" width="66" height="66">
+        <img src="icons/launchericon-96x96.png" alt="" width="66" height="66">
         <span class="eyebrow muted">AKSES PERANGKAT</span>
         <h2 id="accessTitle">Masukkan token</h2>
         <p class="access-copy">Token cukup dimasukkan satu kali dan akan dikenali di perangkat ini.</p>
@@ -264,8 +270,8 @@
     }
     const headers = new Headers(input instanceof Request ? input.headers : undefined);
     new Headers(options.headers || {}).forEach((value, name) => headers.set(name, value));
-    headers.set("X-Ozan-Token", token);
-    headers.set("X-Ozan-Device", deviceId);
+    headers.set("X-Azurium-Token", token);
+    headers.set("X-Azurium-Device", deviceId);
     const response = await nativeFetch(input, { ...options, headers });
     if ([401, 403].includes(response.status)) {
       accessInfo = null;
@@ -278,7 +284,7 @@
     return response;
   }
 
-  window.OzanAccess = {
+  window.AzuriumAccess = {
     ready: () => gate.promise,
     fetch: authorizedFetch,
     showDeviceInfo,

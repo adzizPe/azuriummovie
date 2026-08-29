@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package id.my.ozancicak.movie;
+package id.my.azurium.movie;
 
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
