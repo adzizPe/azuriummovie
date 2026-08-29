@@ -1,9 +1,11 @@
 const MOVIEBOX_API_BASE = "/api/moviebox";
 const ANIME_API_BASE = "/api/anime";
+const DONGHUA_API_BASE = "/api/donghua";
 const params = new URLSearchParams(location.search);
 const subjectId = params.get("id");
-const contentSource = params.get("source") === "anime" ? "anime" : "moviebox";
-const storageSubjectId = contentSource === "anime" ? `anime:${subjectId}` : subjectId;
+const requestedSource = params.get("source");
+const contentSource = ["anime", "donghua"].includes(requestedSource) ? requestedSource : "moviebox";
+const storageSubjectId = contentSource === "moviebox" ? subjectId : `${contentSource}:${subjectId}`;
 const requestedSeason = Number(params.get("se")) || 0;
 const requestedEpisode = Number(params.get("ep")) || 0;
 const requestedEpisodeId = params.get("episodeId") || "";
@@ -64,7 +66,11 @@ const el = {
 };
 
 function endpoint(path, query = {}) {
-  const base = contentSource === "anime" ? ANIME_API_BASE : MOVIEBOX_API_BASE;
+  const base = contentSource === "anime"
+    ? ANIME_API_BASE
+    : contentSource === "donghua"
+      ? DONGHUA_API_BASE
+      : MOVIEBOX_API_BASE;
   const url = new URL(`${base}/${path}`, window.location.origin);
   Object.entries(query).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== "") url.searchParams.set(key, value);
@@ -106,7 +112,7 @@ function formatDuration(seconds) {
 }
 
 function isEpisodic() {
-  return contentSource === "anime" ? currentAnimeEpisodes.length > 1 : subjectType === 2 || subjectType === 7;
+  return contentSource !== "moviebox" ? currentAnimeEpisodes.length > 1 : subjectType === 2 || subjectType === 7;
 }
 
 function lockScreenOrientation(mode) {
@@ -221,7 +227,7 @@ function renderDetail(detail) {
   });
   document.title = `${displayTitle} — azuriummovie`;
   el.title.textContent = displayTitle;
-  el.type.textContent = contentSource === "anime" ? "ANIME" : subjectType === 7 ? "DRAMA PENDEK" : subjectType === 2 ? "SERIAL" : "FILM";
+  el.type.textContent = contentSource === "anime" ? "ANIME" : contentSource === "donghua" ? "DONGHUA" : subjectType === 7 ? "DRAMA PENDEK" : subjectType === 2 ? "SERIAL" : "FILM";
   el.rating.textContent = `★ ${detail.imdbRatingValue || "—"}`;
   el.meta.textContent = [detail.releaseDate?.slice(0, 4), formatDuration(detail.duration), detail.countryName].filter(Boolean).join("  ·  ");
   renderDescription(detail.description);
@@ -331,7 +337,7 @@ function setSource(index, preserve = false, resumeAt = 0) {
 }
 
 function episodeSequence() {
-  if (contentSource === "anime") {
+  if (contentSource !== "moviebox") {
     return currentAnimeEpisodes.map((_, index) => ({ se: 0, ep: index + 1 }));
   }
   return currentSeasons.flatMap(season => Array.from(
@@ -356,7 +362,7 @@ function updateEpisodeActions() {
 }
 
 function paintEpisodes(seasonNumber) {
-  if (contentSource === "anime") {
+  if (contentSource !== "moviebox") {
     paintAnimeEpisodes();
     return;
   }
@@ -382,7 +388,7 @@ function paintEpisodes(seasonNumber) {
 }
 
 function selectEpisode(season, episode) {
-  if (contentSource === "anime") {
+  if (contentSource !== "moviebox") {
     el.animeEpisodeSelect.value = String(episode);
     paintAnimeEpisodes();
     return;
@@ -477,8 +483,8 @@ function saveCurrentProgress(force = false, started = false) {
   AzuriumStore.saveProgress(currentDetail, {
     season: currentSeason,
     episode: currentEpisode,
-    episodeId: contentSource === "anime" ? currentAnimeEpisodes[currentAnimeEpisodeIndex]?.id : "",
-    episodeLabel: contentSource === "anime" ? animeEpisodeLabel(currentAnimeEpisodes[currentAnimeEpisodeIndex], currentAnimeEpisodeIndex) : "",
+    episodeId: contentSource !== "moviebox" ? currentAnimeEpisodes[currentAnimeEpisodeIndex]?.id : "",
+    episodeLabel: contentSource !== "moviebox" ? animeEpisodeLabel(currentAnimeEpisodes[currentAnimeEpisodeIndex], currentAnimeEpisodeIndex) : "",
     currentTime: el.video.currentTime,
     duration: Number.isFinite(el.video.duration) ? el.video.duration : 0,
     started,
@@ -489,11 +495,11 @@ function updateAddress() {
   const url = new URL(location.href);
   url.searchParams.set("id", subjectId);
   url.searchParams.set("type", subjectType);
-  if (contentSource === "anime") url.searchParams.set("source", "anime");
+  if (contentSource !== "moviebox") url.searchParams.set("source", contentSource);
   if (isEpisodic()) {
     url.searchParams.set("se", currentSeason);
     url.searchParams.set("ep", currentEpisode);
-    if (contentSource === "anime" && currentAnimeEpisodes[currentAnimeEpisodeIndex]?.id) {
+    if (contentSource !== "moviebox" && currentAnimeEpisodes[currentAnimeEpisodeIndex]?.id) {
       url.searchParams.set("episodeId", currentAnimeEpisodes[currentAnimeEpisodeIndex].id);
     }
   } else {
@@ -505,7 +511,7 @@ function updateAddress() {
 }
 
 async function loadStream(se = 0, ep = 0, shouldPlay = false) {
-  if (contentSource === "anime") return loadAnimeStream(Math.max(0, Number(ep) - 1), shouldPlay);
+  if (contentSource !== "moviebox") return loadAnimeStream(Math.max(0, Number(ep) - 1), shouldPlay);
   if (currentSources.length && (se !== currentSeason || ep !== currentEpisode)) saveCurrentProgress(true);
   changingStream = true;
   currentSeason = se;
@@ -560,7 +566,7 @@ async function loadStream(se = 0, ep = 0, shouldPlay = false) {
 async function loadAnimeStream(index = 0, shouldPlay = false) {
   const episode = currentAnimeEpisodes[index];
   if (!episode) {
-    showPlayerError("Episode Anime yang dipilih tidak ditemukan.");
+    showPlayerError(`Episode ${contentSource === "donghua" ? "Donghua" : "Anime"} yang dipilih tidak ditemukan.`);
     return;
   }
   if (currentSources.length && index !== currentAnimeEpisodeIndex) saveCurrentProgress(true);
@@ -576,7 +582,7 @@ async function loadAnimeStream(index = 0, shouldPlay = false) {
   el.placeholder.hidden = false;
   el.video.removeAttribute("src");
   el.video.load();
-  setSourceStatus("Menyiapkan episode Anime...");
+  setSourceStatus(`Menyiapkan episode ${contentSource === "donghua" ? "Donghua" : "Anime"}...`);
   selectEpisode(0, currentEpisode);
   updateAddress();
   updateEpisodeActions();
@@ -684,19 +690,19 @@ function createRecommendation(item) {
 
 async function loadRecommendations() {
   try {
-    const data = contentSource === "anime"
+    const data = contentSource !== "moviebox"
       ? await getJson("trending", { page: 1 })
       : await getJson("recommend", { id: subjectId, page: 1 });
     let items = data.items || data.data?.items || data.sections?.flatMap(section => section.items || []) || [];
-    if (contentSource === "anime") {
+    if (contentSource !== "moviebox") {
       items = items
         .filter(item => String(item.id) !== String(subjectId))
         .map(item => ({
-          subjectId: `anime:${item.id}`,
+          subjectId: `${contentSource}:${item.id}`,
           providerId: String(item.id),
-          source: "anime",
+          source: contentSource,
           name: item.title,
-          type: 8,
+          type: contentSource === "donghua" ? 9 : 8,
           poster: item.thumbnail,
           year: item.year,
           genre: Array.isArray(item.genres) ? item.genres.join(", ") : "",
@@ -726,13 +732,13 @@ function animeDetailFromResponse(result) {
   return {
     subjectId: storageSubjectId,
     providerId: subjectId,
-    source: "anime",
-    title: category.category_name || firstEpisode.series || firstEpisode.title || "Anime",
-    subjectType: 8,
+    source: contentSource,
+    title: category.category_name || firstEpisode.series || firstEpisode.title || (contentSource === "donghua" ? "Donghua" : "Anime"),
+    subjectType: contentSource === "donghua" ? 9 : 8,
     imdbRatingValue: category.rating || firstEpisode.rating,
     releaseDate: String(category.year || firstEpisode.year || ""),
-    countryName: "Jepang",
-    description: htmlToText(category.desc_anime) || firstEpisode.description || "Deskripsi Anime belum tersedia.",
+    countryName: contentSource === "donghua" ? "Tiongkok" : "Jepang",
+    description: htmlToText(category.desc_anime) || firstEpisode.description || `Deskripsi ${contentSource === "donghua" ? "Donghua" : "Anime"} belum tersedia.`,
     cover: { url: firstEpisode.thumbnail || "" },
     genre: category.genre || (Array.isArray(firstEpisode.genres) ? firstEpisode.genres.join(", ") : ""),
     staffList: [],
@@ -750,12 +756,12 @@ async function init() {
   }
 
   try {
-    if (contentSource === "anime") {
+    if (contentSource !== "moviebox") {
       const result = await getJson("detail", { id: subjectId });
-      subjectType = 8;
+      subjectType = contentSource === "donghua" ? 9 : 8;
       renderDetail(animeDetailFromResponse(result));
       renderAnimeEpisodes(result.items || []);
-      if (!currentAnimeEpisodes.length) throw new Error("Episode Anime belum tersedia.");
+      if (!currentAnimeEpisodes.length) throw new Error(`Episode ${contentSource === "donghua" ? "Donghua" : "Anime"} belum tersedia.`);
       const saved = AzuriumStore.getLatestProgress(storageSubjectId);
       let initialIndex = 0;
       if (requestedEpisodeId) {

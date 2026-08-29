@@ -1,5 +1,6 @@
 const API_BASE = "/api/moviebox";
 const ANIME_API_BASE = "/api/anime";
+const DONGHUA_API_BASE = "/api/donghua";
 const HERO_CACHE_KEY = "azuriummovie:hero-cache:v1";
 const HERO_CACHE_TTL = 24 * 60 * 60 * 1000;
 
@@ -66,7 +67,7 @@ const elements = {
   historyCount: document.querySelector("#historyCount"),
 };
 
-const labels = { movies: "Film untukmu", tv: "Serial TV pilihan", tvshows: "Drama pendek", animation: "Dunia anime", kids: "Pilihan keluarga" };
+const labels = { movies: "Film untukmu", tv: "Serial TV pilihan", tvshows: "Drama pendek", animation: "Dunia anime", donghua: "Donghua pilihan", kids: "Pilihan keluarga" };
 
 function syncSerialTabs() {
   const serialNavActive = document.querySelector(".nav-link.active")?.dataset.endpoint === "tv";
@@ -203,15 +204,15 @@ function normalizeMovieboxSections(sections) {
   }));
 }
 
-function normalizeAnimeItem(item) {
+function normalizeExternalItem(item, source) {
   const providerId = String(item.id || item.catId || "");
   return {
-    subjectId: `anime:${providerId}`,
+    subjectId: `${source}:${providerId}`,
     providerId,
-    source: "anime",
+    source,
     name: text(item.title || item.series, "Tanpa judul"),
     title: text(item.title || item.series, "Tanpa judul"),
-    type: 8,
+    type: source === "donghua" ? 9 : 8,
     poster: text(item.thumbnail),
     year: text(item.year),
     genre: Array.isArray(item.genres) ? item.genres.join(", ") : text(item.genre),
@@ -220,6 +221,35 @@ function normalizeAnimeItem(item) {
     status: text(item.status),
     aliases: [...animeAliases(item)],
   };
+}
+
+function normalizeAnimeItem(item) {
+  return normalizeExternalItem(item, "anime");
+}
+
+function providerItems(data) {
+  for (const key of ["items", "posts", "new_anime", "latest_anime"]) {
+    if (Array.isArray(data?.[key]) && data[key].length) return data[key];
+  }
+  return [];
+}
+
+function donghuaSections(results) {
+  const definitions = state.query
+    ? [[0, `Hasil Donghua untuk “${state.query}”`]]
+    : [
+        [0, state.page > 1 ? `Donghua populer · halaman ${state.page}` : "Donghua populer"],
+        [1, "Donghua paling disukai"],
+        [2, "Rekomendasi Donghua"],
+      ];
+  const seen = new Set();
+  return definitions.flatMap(([index, title]) => {
+    if (results[index]?.status !== "fulfilled") return [];
+    const items = providerItems(results[index].value)
+      .map(item => normalizeExternalItem(item, "donghua"))
+      .filter(item => item.providerId && !seen.has(item.providerId) && seen.add(item.providerId));
+    return items.length ? [{ title, items }] : [];
+  });
 }
 
 function mergeAnimeSections(movieboxSections, animeGroups) {
@@ -358,7 +388,7 @@ function warmNextHeroImage() {
 }
 
 async function updateHeroDescription(item, request) {
-  if (item.desc || item.source === "anime") return;
+  if (item.desc || (item.source && item.source !== "moviebox")) return;
   try {
     const response = await apiFetch(`${API_BASE}/detail?id=${encodeURIComponent(item.subjectId)}`);
     const result = await response.json();
@@ -528,14 +558,17 @@ async function fetchSuggestions(query) {
   suggestionController?.abort();
   suggestionController = new AbortController();
   try {
-    const response = await apiFetch(`${API_BASE}/suggest?q=${encodeURIComponent(query)}`, {
+    const suggestionUrl = state.endpoint === "donghua"
+      ? `${DONGHUA_API_BASE}/search?q=${encodeURIComponent(query)}&count=7`
+      : `${API_BASE}/suggest?q=${encodeURIComponent(query)}`;
+    const response = await apiFetch(suggestionUrl, {
       signal: suggestionController.signal,
       cache: "no-store",
     });
     if (!response.ok) throw new Error("Saran tidak tersedia");
     const result = await response.json();
     if (elements.searchInput.value.trim() !== query) return;
-    const words = (result.data?.items || result.items || []).map(item => text(item.word || item.name)).filter(Boolean);
+    const words = (result.data?.items || providerItems(result)).map(item => text(item.word || item.name || item.title)).filter(Boolean);
     renderSuggestions([...new Set(words)]);
   } catch (error) {
     if (error.name !== "AbortError") hideSuggestions();
@@ -566,7 +599,19 @@ async function loadCatalog(append = false) {
   }
   try {
     const animeMode = state.endpoint === "animation";
-    const requests = [fetchJsonResponse(apiUrl(), catalogController.signal)];
+    const donghuaMode = state.endpoint === "donghua";
+    const requests = donghuaMode
+      ? [fetchJsonResponse(
+          state.query
+            ? `${DONGHUA_API_BASE}/search?q=${encodeURIComponent(state.query)}&page=${state.page}&count=50`
+            : `${DONGHUA_API_BASE}/trending?page=${state.page}&count=50`,
+          catalogController.signal,
+        )]
+      : [fetchJsonResponse(apiUrl(), catalogController.signal)];
+    if (donghuaMode && !state.query && !append && state.page === 1) {
+      requests.push(fetchJsonResponse(`${DONGHUA_API_BASE}/favorite?page=1&count=50`, catalogController.signal));
+      requests.push(fetchJsonResponse(`${DONGHUA_API_BASE}/slide?type=latest`, catalogController.signal));
+    }
     if (animeMode) {
       if (state.query) {
         requests.push(fetchJsonResponse(`${ANIME_API_BASE}/search?q=${encodeURIComponent(state.query)}&page=${state.page}`, catalogController.signal));
@@ -579,8 +624,8 @@ async function loadCatalog(append = false) {
     if (results.every(result => result.status === "rejected")) throw results[0].reason;
     if (currentRequest !== state.requestId) return;
     const movieboxData = results[0].status === "fulfilled" ? results[0].value : { items: [] };
-    const movieboxSections = normalizeMovieboxSections(extractSections(movieboxData));
-    let sections = movieboxSections;
+    const movieboxSections = donghuaMode ? [] : normalizeMovieboxSections(extractSections(movieboxData));
+    let sections = donghuaMode ? donghuaSections(results) : movieboxSections;
     if (animeMode) {
       const animeGroups = [];
       if (state.query && results[1]?.status === "fulfilled") {
@@ -764,7 +809,8 @@ function refreshLibraryFromStorage() {
     if (!favorite || !link) return;
     const linkUrl = new URL(link.href, location.href);
     const id = linkUrl.searchParams.get("id");
-    const favoriteId = linkUrl.searchParams.get("source") === "anime" ? `anime:${id}` : id;
+    const source = linkUrl.searchParams.get("source") || "moviebox";
+    const favoriteId = source === "moviebox" ? id : `${source}:${id}`;
     favorite.classList.toggle("active", AzuriumStore.isFavorite(favoriteId));
   });
 }

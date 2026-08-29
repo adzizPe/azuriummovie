@@ -48,6 +48,7 @@ Di cPanel File Manager, aktifkan **Show Hidden Files**, lalu buat file
 return [
     'MOVIEBOX_API_BASE' => 'MASUKKAN_ALAMAT_API_MOVIEBOX_DI_SINI',
     'ANIME_API_BASE' => 'MASUKKAN_ALAMAT_API_ANIME_DI_SINI',
+    'DONGHUA_API_BASE' => 'MASUKKAN_ALAMAT_API_DONGHUA_DI_SINI',
     'ACCESS_TOKENS' => [
         '0001', '0002', '0003', '0004', '0005',
         '0006', '0007', '0008', '0009', '0010',

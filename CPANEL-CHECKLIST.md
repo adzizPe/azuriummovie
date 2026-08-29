@@ -64,6 +64,8 @@ Upload seluruh folder `api/` beserta file tersembunyinya:
 - [ ] `api/moviebox/.htaccess`
 - [ ] `api/anime/index.php`
 - [ ] `api/anime/.htaccess`
+- [ ] `api/donghua/index.php`
+- [ ] `api/donghua/.htaccess`
 - [ ] `api/translate/index.php`
 
 ## 2. Wajib ada di cPanel, tetapi bersifat rahasia
@@ -75,6 +77,7 @@ Upload secara manual melalui cPanel dan pastikan isinya memuat:
 
 - `MOVIEBOX_API_BASE`
 - `ANIME_API_BASE`
+- `DONGHUA_API_BASE`
 - `ACCESS_TOKENS`
 - `PLAY_REVIEW_TOKENS` (khusus peninjau Google Play dan tidak diikat ke satu perangkat)
 
@@ -144,6 +147,7 @@ Mengupload seluruh folder `icons/` tetap aman, tetapi file di atas tidak wajib.
 - [ ] Logo baru terlihat; jika masih lama, refresh dengan `Ctrl + F5`.
 - [ ] Token dapat digunakan dan katalog berhasil dimuat.
 - [ ] Pencarian, detail, video, kualitas, subtitle, episode, favorit, riwayat, dan lanjut menonton berfungsi.
+- [ ] Kategori `Donghua` tampil terpisah dan salah satu episodenya dapat diputar.
 - [ ] `https://ozancicak.my.id/.api-config.php` tidak dapat dibuka oleh publik.
 
 ## Ringkasan cepat

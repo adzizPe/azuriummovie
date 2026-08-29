@@ -69,10 +69,11 @@
 
   function normalizeItem(item = {}) {
     const subjectId = String(item.subjectId || item.id || "");
+    const sourcePrefix = subjectId.match(/^(anime|donghua):/)?.[1] || "";
     return {
       subjectId,
-      providerId: String(item.providerId || item.id || subjectId.replace(/^anime:/, "")),
-      source: String(item.source || (subjectId.startsWith("anime:") ? "anime" : "moviebox")),
+      providerId: String(item.providerId || item.id || subjectId.replace(/^(?:anime|donghua):/, "")),
+      source: String(item.source || sourcePrefix || "moviebox"),
       name: displayTitle(item.name || item.title),
       type: Number(item.type || item.subjectType) || 1,
       poster: String(item.poster || item.cover?.url || ""),
