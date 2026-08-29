@@ -7,9 +7,13 @@ proxy `/api/moviebox`.
 
 ## Hasil build lokal
 
-APK uji yang siap dipasang:
+Android App Bundle terbaru untuk Google Play:
 
-`../artifacts/azuriummovie-1.3.1-test.apk`
+`../artifacts/azuriummovie-1.3.3-play.aab`
+
+APK uji lokal terakhir:
+
+`../artifacts/azuriummovie-1.3.2-test.apk`
 
 APK dan keystore sengaja diabaikan Git. Kode sumber Android, konfigurasi TWA,
 PWA, dan Digital Asset Links tetap boleh masuk repository publik karena tidak

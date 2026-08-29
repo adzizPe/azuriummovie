@@ -52,6 +52,7 @@ return [
         '0001', '0002', '0003', '0004', '0005',
         '0006', '0007', '0008', '0009', '0010',
     ],
+    'PLAY_REVIEW_TOKENS' => ['9999'],
 ];
 ```
 
@@ -103,7 +104,13 @@ Status > Run AutoSSL** agar website memakai HTTPS.
 
 APK uji yang sudah dibuat berada di:
 
-`artifacts/azuriummovie-1.3.1-test.apk`
+Bundle terbaru untuk diunggah ke Google Play Console:
+
+`artifacts/azuriummovie-1.3.3-play.aab`
+
+APK uji lokal terakhir:
+
+`artifacts/azuriummovie-1.3.2-test.apk`
 
 APK ini memakai Trusted Web Activity dan membuka `https://ozancicak.my.id`
 secara online, sehingga katalog dan video tidak disalin ke APK. Unggah dahulu
@@ -116,7 +123,9 @@ Keystore uji berada hanya di komputer lokal pada
 memakai sertifikat uji baru, hapus APK uji versi lama sebelum memasang versi
 1.2.0. Jangan memakai
 keystore uji untuk publikasi Play Store. Karena identitas Android sekarang
-`id.my.azurium.movie`, APK lama perlu dihapus sebelum memasang versi 1.3.1.
+`id.my.azurium.movie`, APK lama perlu dihapus sebelum memasang versi uji 1.3.2.
 Untuk rilis produksi, buat keystore
 produksi milik sendiri, simpan cadangannya, tanda tangani ulang APK/AAB, lalu
-tambahkan fingerprint SHA-256 produksi ke `.well-known/assetlinks.json`.
+Fingerprint dari JSON Digital Asset Links Google Play sudah ditambahkan ke
+`.well-known/assetlinks.json`, termasuk fingerprint kunci klasik dan post-quantum
+untuk penandatanganan Quantum-ready. Upload ulang file tersebut ke cPanel.

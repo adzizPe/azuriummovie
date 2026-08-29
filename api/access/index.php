@@ -53,22 +53,27 @@ if (!$identity['ok']) {
 azurium_rate_limit($config, false, true);
 
 if ($action === 'activate') {
-    $result = azurium_update_bindings($config, function (array &$bindings) use ($identity): array {
-        $existing = $bindings[$identity['tokenHash']] ?? null;
-        if (is_array($existing) && !hash_equals((string) ($existing['deviceHash'] ?? ''), $identity['deviceHash'])) {
-            return ['ok' => false, 'status' => 409, 'error' => 'Token ini sudah digunakan pada perangkat lain.', 'write' => false];
+    if (($identity['isReview'] ?? false) !== true) {
+        $result = azurium_update_bindings($config, function (array &$bindings) use ($identity): array {
+            $existing = $bindings[$identity['tokenHash']] ?? null;
+            if (is_array($existing) && !hash_equals((string) ($existing['deviceHash'] ?? ''), $identity['deviceHash'])) {
+                return ['ok' => false, 'status' => 409, 'error' => 'Token ini sudah digunakan pada perangkat lain.', 'write' => false];
+            }
+            $bindings[$identity['tokenHash']] = [
+                'deviceHash' => $identity['deviceHash'],
+                'activatedAt' => $existing['activatedAt'] ?? gmdate('c'),
+                'lastValidatedAt' => gmdate('c'),
+            ];
+            return ['ok' => true, 'write' => true];
+        });
+        if (!$result['ok']) {
+            accessJson(['error' => $result['error']], (int) $result['status']);
         }
-        $bindings[$identity['tokenHash']] = [
-            'deviceHash' => $identity['deviceHash'],
-            'activatedAt' => $existing['activatedAt'] ?? gmdate('c'),
-            'lastValidatedAt' => gmdate('c'),
-        ];
-        return ['ok' => true, 'write' => true];
-    });
-    if (!$result['ok']) {
-        accessJson(['error' => $result['error']], (int) $result['status']);
     }
 } elseif ($action === 'release') {
+    if (($identity['isReview'] ?? false) === true) {
+        accessJson(['ok' => true, 'released' => true]);
+    }
     $bound = azurium_validate_bound_access($config, $token, $deviceId);
     if (!$bound['ok']) {
         accessJson(['error' => $bound['error']], (int) $bound['status']);

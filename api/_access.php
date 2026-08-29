@@ -37,6 +37,21 @@ function azurium_token_index(array $config, string $candidate): int
     return 0;
 }
 
+function azurium_review_token_index(array $config, string $candidate): int
+{
+    $tokens = $config['PLAY_REVIEW_TOKENS'] ?? [];
+    if (!is_array($tokens)) {
+        return 0;
+    }
+    $candidate = azurium_normalize_token($candidate);
+    foreach (array_values($tokens) as $index => $token) {
+        if (is_string($token) && hash_equals(azurium_normalize_token($token), $candidate)) {
+            return $index + 1;
+        }
+    }
+    return 0;
+}
+
 function azurium_valid_device_id(string $deviceId): bool
 {
     return preg_match('/^[A-Za-z0-9._:-]{16,100}$/', $deviceId) === 1;
@@ -155,8 +170,9 @@ function azurium_update_bindings(array $config, callable $callback): array
 
 function azurium_access_identity(array $config, string $token, string $deviceId): array
 {
+    $reviewIndex = azurium_review_token_index($config, $token);
     $index = azurium_token_index($config, $token);
-    if ($index === 0) {
+    if ($index === 0 && $reviewIndex === 0) {
         return ['ok' => false, 'status' => 401, 'error' => 'Token tidak valid.'];
     }
     if (!azurium_valid_device_id($deviceId)) {
@@ -167,9 +183,10 @@ function azurium_access_identity(array $config, string $token, string $deviceId)
     return [
         'ok' => true,
         'index' => $index,
+        'isReview' => $reviewIndex > 0,
         'tokenHash' => $tokenHash,
         'deviceHash' => $deviceHash,
-        'label' => sprintf('Token %02d', $index),
+        'label' => $reviewIndex > 0 ? 'Google Play Reviewer' : sprintf('Token %02d', $index),
         'maskedToken' => '••••' . substr(azurium_normalize_token($token), -4),
     ];
 }
@@ -178,6 +195,9 @@ function azurium_validate_bound_access(array $config, string $token, string $dev
 {
     $identity = azurium_access_identity($config, $token, $deviceId);
     if (!$identity['ok']) {
+        return $identity;
+    }
+    if (($identity['isReview'] ?? false) === true) {
         return $identity;
     }
     $bindings = azurium_read_bindings($config);

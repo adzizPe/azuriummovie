@@ -1,15 +1,15 @@
-const SHELL_CACHE = "azuriummovie-shell-v10";
+const SHELL_CACHE = "azuriummovie-shell-v12";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/watch.html",
   "/privacy.html",
-  "/styles.css?v=10",
-  "/access.js?v=6",
+  "/styles.css?v=12",
+  "/access.js?v=8",
   "/storage.js?v=4",
-  "/app.js?v=8",
+  "/app.js?v=10",
   "/watch.js?v=8",
-  "/pwa.js?v=2",
+  "/pwa.js?v=3",
   "/manifest.webmanifest",
   "/icons/launchericon-48x48.png",
   "/icons/launchericon-96x96.png",

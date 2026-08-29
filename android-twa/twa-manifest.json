@@ -19,8 +19,8 @@
     "path": "./azuriummovie.keystore",
     "alias": "azuriummovie"
   },
-  "appVersion": "1.3.1",
-  "appVersionCode": 5,
+  "appVersion": "1.3.3",
+  "appVersionCode": 7,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://ozancicak.my.id/manifest.webmanifest",
@@ -39,6 +39,18 @@
     {
       "name": "azuriummovie test build",
       "value": "18:7A:87:6A:7B:D2:DD:37:1B:32:93:A3:7C:15:A4:E7:C8:36:7A:68:50:C6:52:27:60:AC:BC:67:4B:3F:19:40"
+    },
+    {
+      "name": "Google Play app signing",
+      "value": "B1:59:72:8A:A7:13:AC:E9:41:EC:D7:7B:42:ED:99:B2:EF:86:39:D0:A3:4E:1C:DB:51:F1:85:08:A9:D9:CE:F4"
+    },
+    {
+      "name": "Google Play quantum-ready classical",
+      "value": "00:70:45:02:0A:6F:4D:60:9A:60:92:9D:28:4B:EC:E5:92:7C:87:20:7A:AB:AA:B5:FB:A5:42:D6:F2:45:BE:20"
+    },
+    {
+      "name": "Google Play quantum-ready post-quantum",
+      "value": "53:70:DE:1F:1A:7D:15:47:60:F6:01:7F:8C:14:7E:9E:D5:28:43:8D:AA:F0:35:5E:B4:C2:03:98:F6:57:73:8A"
     }
   ],
   "additionalTrustedOrigins": [],

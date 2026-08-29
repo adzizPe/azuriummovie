@@ -28,9 +28,9 @@ let suggestionController = null;
 let suggestionTimer = 0;
 let heroItems = [];
 let heroSlideIndex = 0;
-let heroSlideTimer = 0;
 let heroDetailRequest = 0;
 let heroPointerStart = 0;
+let heroPointerId = null;
 const heroImageCache = new Map();
 const HERO_IMAGE_TIMEOUT = 4500;
 
@@ -52,10 +52,6 @@ const elements = {
   heroDesc: document.querySelector("#heroDesc"),
   heroPlay: document.querySelector("#heroPlay"),
   heroInfo: document.querySelector("#heroInfo"),
-  heroSliderControls: document.querySelector("#heroSliderControls"),
-  heroPrevious: document.querySelector("#heroPrevious"),
-  heroNext: document.querySelector("#heroNext"),
-  heroDots: document.querySelector("#heroDots"),
   serialTabs: document.querySelector("#serialTabs"),
   libraryPanel: document.querySelector("#libraryPanel"),
   libraryTitle: document.querySelector("#libraryTitle"),
@@ -386,9 +382,7 @@ async function commitHero(item, preparedImage, request) {
   elements.heroInfo.onclick = () => { location.href = watchUrl(item); };
   elements.hero.classList.remove("hero-loading");
   requestAnimationFrame(() => elements.hero.classList.remove("hero-changing"));
-  elements.heroSliderControls.hidden = heroItems.length < 2;
   warmNextHeroImage();
-  if (!heroSlideTimer) startHeroSlider();
   updateHeroDescription(item, request);
   return true;
 }
@@ -402,7 +396,9 @@ async function showHero(item) {
   if (request !== heroDetailRequest) return;
 
   if (preparedImage !== "timeout") {
-    if (preparedImage || elements.hero.classList.contains("hero-loading")) await commitHero(item, preparedImage, request);
+    if (preparedImage || elements.hero.classList.contains("hero-loading")) {
+      await commitHero(item, preparedImage, request);
+    }
     return;
   }
 
@@ -412,26 +408,13 @@ async function showHero(item) {
   });
 }
 
-function stopHeroSlider() {
-  clearInterval(heroSlideTimer);
-  heroSlideTimer = 0;
+function setHeroVisibility(isVisible) {
+  elements.hero.classList.toggle("hero-paused", !isVisible);
 }
 
-function startHeroSlider() {
-  stopHeroSlider();
-  if (heroItems.length < 2 || document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  heroSlideTimer = window.setInterval(() => selectHeroSlide(heroSlideIndex + 1), 7000);
-}
-
-function selectHeroSlide(index, restart = false) {
+function selectHeroSlide(index) {
   if (!heroItems.length) return;
-  if (restart) stopHeroSlider();
   heroSlideIndex = (index + heroItems.length) % heroItems.length;
-  elements.heroDots.querySelectorAll("button").forEach((dot, dotIndex) => {
-    const active = dotIndex === heroSlideIndex;
-    dot.classList.toggle("active", active);
-    dot.setAttribute("aria-current", active ? "true" : "false");
-  });
   showHero(heroItems[heroSlideIndex]);
 }
 
@@ -456,19 +439,9 @@ function writeHeroCache(items) {
 }
 
 function setupHeroSlider(items, persistCache = true) {
-  stopHeroSlider();
   heroItems = uniqueItems(items).filter(item => item?.subjectId && item?.poster).slice(0, 6);
   if (persistCache) writeHeroCache(heroItems);
   heroSlideIndex = 0;
-  elements.heroDots.replaceChildren();
-  heroItems.forEach((item, index) => {
-    const dot = document.createElement("button");
-    dot.type = "button";
-    dot.setAttribute("aria-label", `Tampilkan ${AzuriumStore.displayTitle(item.name || item.title)}`);
-    dot.addEventListener("click", () => selectHeroSlide(index, true));
-    elements.heroDots.append(dot);
-  });
-  elements.heroSliderControls.hidden = true;
   selectHeroSlide(0);
 }
 
@@ -626,24 +599,32 @@ document.querySelectorAll(".nav-link").forEach(button => {
   });
 });
 
-elements.heroPrevious.addEventListener("click", () => selectHeroSlide(heroSlideIndex - 1, true));
-elements.heroNext.addEventListener("click", () => selectHeroSlide(heroSlideIndex + 1, true));
 elements.hero.addEventListener("pointerdown", event => {
-  if (event.pointerType === "mouse") return;
+  if (event.target.closest("a, button")) return;
   heroPointerStart = event.clientX;
+  heroPointerId = event.pointerId;
+  elements.hero.setPointerCapture?.(event.pointerId);
+  elements.hero.classList.add("hero-dragging");
 });
 elements.hero.addEventListener("pointerup", event => {
-  if (!heroPointerStart || event.pointerType === "mouse") return;
+  if (heroPointerId !== event.pointerId) return;
   const distance = event.clientX - heroPointerStart;
   heroPointerStart = 0;
+  heroPointerId = null;
+  elements.hero.classList.remove("hero-dragging");
   if (Math.abs(distance) < 45) return;
-  selectHeroSlide(heroSlideIndex + (distance < 0 ? 1 : -1), true);
+  selectHeroSlide(heroSlideIndex + (distance < 0 ? 1 : -1));
 });
-elements.hero.addEventListener("pointercancel", () => { heroPointerStart = 0; });
-elements.hero.addEventListener("mouseenter", stopHeroSlider);
-elements.hero.addEventListener("mouseleave", startHeroSlider);
-elements.hero.addEventListener("focusin", stopHeroSlider);
-elements.hero.addEventListener("focusout", startHeroSlider);
+elements.hero.addEventListener("pointercancel", () => {
+  heroPointerStart = 0;
+  heroPointerId = null;
+  elements.hero.classList.remove("hero-dragging");
+});
+elements.hero.addEventListener("keydown", event => {
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  event.preventDefault();
+  selectHeroSlide(heroSlideIndex + (event.key === "ArrowRight" ? 1 : -1));
+});
 
 elements.serialTabs.querySelectorAll(".catalog-tab").forEach(button => {
   button.addEventListener("click", () => {
@@ -767,11 +748,15 @@ window.addEventListener("pageshow", refreshLibraryFromStorage);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     refreshLibraryFromStorage();
-    startHeroSlider();
-  } else {
-    stopHeroSlider();
   }
 });
+
+if ("IntersectionObserver" in window) {
+  const heroObserver = new IntersectionObserver(entries => {
+    setHeroVisibility(Boolean(entries[0]?.isIntersecting));
+  }, { threshold: 0.08 });
+  heroObserver.observe(elements.hero);
+}
 
 document.addEventListener("pointerdown", event => {
   if (!elements.searchForm.contains(event.target)) hideSuggestions();

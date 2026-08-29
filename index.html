@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" sizes="192x192" href="icons/launchericon-192x192.png">
   <link rel="preconnect" href="https://pbcdn.aoneroom.com">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8957974802215246" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -46,7 +46,7 @@
   </header>
 
   <main>
-    <section id="hero" class="hero hero-loading" aria-label="Film pilihan">
+    <section id="hero" class="hero hero-loading" aria-label="Film pilihan. Geser ke kiri atau kanan untuk mengganti pilihan." tabindex="0">
       <img class="hero-art" id="heroArt" alt="" decoding="async" fetchpriority="high">
       <div class="hero-shade"></div>
       <div class="hero-content">
@@ -61,11 +61,6 @@
           </a>
           <button id="heroInfo" class="button button-glass" type="button" disabled>Info lengkap</button>
         </div>
-      </div>
-      <div id="heroSliderControls" class="hero-slider-controls" aria-label="Pilihan tontonan" hidden>
-        <button id="heroPrevious" type="button" aria-label="Pilihan sebelumnya">&larr;</button>
-        <div id="heroDots" class="hero-dots"></div>
-        <button id="heroNext" type="button" aria-label="Pilihan berikutnya">&rarr;</button>
       </div>
       <div class="hero-index" aria-hidden="true"><span>01</span><i></i><small>CURATED</small></div>
     </section>
@@ -115,21 +110,14 @@
     </section>
   </main>
 
-  <aside id="installApp" class="install-app" hidden>
-    <img src="icons/launchericon-192x192.png" alt="" width="54" height="54">
-    <div><strong>Pasang azuriummovie</strong><span>Buka lebih cepat seperti aplikasi Android.</span></div>
-    <button id="installAppButton" class="button button-primary" type="button">Install</button>
-    <button id="dismissInstall" class="install-dismiss" type="button" aria-label="Nanti saja">&times;</button>
-  </aside>
-
   <footer>
     <a class="brand brand-small" href="index.html"><img class="brand-logo" src="icons/launchericon-48x48.png" alt="" width="38" height="38"><span>AZURIUMMOVIE</span></a>
     <div class="footer-copy"><p>Koleksi film untuk menemani setiap suasana.</p><a href="privacy.html">Kebijakan Privasi</a></div>
   </footer>
 
-  <script src="access.js?v=6"></script>
+  <script src="access.js?v=8"></script>
   <script src="storage.js?v=4"></script>
-  <script src="app.js?v=8"></script>
-  <script src="pwa.js?v=2"></script>
+  <script src="app.js?v=10"></script>
+  <script src="pwa.js?v=3"></script>
 </body>
 </html>
