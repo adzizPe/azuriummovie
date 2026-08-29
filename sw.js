@@ -1,10 +1,11 @@
-const SHELL_CACHE = "azuriummovie-shell-v9";
+const SHELL_CACHE = "azuriummovie-shell-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/watch.html",
-  "/styles.css?v=9",
-  "/access.js?v=5",
+  "/privacy.html",
+  "/styles.css?v=10",
+  "/access.js?v=6",
   "/storage.js?v=4",
   "/app.js?v=8",
   "/watch.js?v=8",

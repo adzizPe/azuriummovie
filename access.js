@@ -106,6 +106,7 @@
         <p class="access-message" aria-live="polite"></p>
         <div class="access-detail" hidden></div>
         <button class="access-change text-button" type="button" hidden>Ganti atau lepaskan token</button>
+        <a class="access-privacy" href="privacy.html">Kebijakan Privasi</a>
       </section>`;
     document.body.append(modal);
     form = modal.querySelector(".access-form");

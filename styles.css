@@ -192,6 +192,10 @@ main { position: relative; z-index: 1; }
 .load-more-wrap { display: grid; place-items: center; margin-top: 52px; }
 footer { min-height: 180px; margin: 0 clamp(20px,5vw,96px); padding: 44px 0; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); color: var(--muted); }
 .brand-small { color: var(--ink); transform: scale(.85); transform-origin: left; }
+.footer-copy { display: grid; justify-items: end; gap: 7px; text-align: right; }
+.footer-copy p { margin: 0; }
+.footer-copy a, .access-privacy { color: var(--lime); text-decoration: underline; text-decoration-color: rgba(199,255,85,.35); text-underline-offset: 4px; }
+.footer-copy a:hover, .access-privacy:hover { text-decoration-color: currentColor; }
 .install-app { width: min(560px, calc(100% - 32px)); min-height: 82px; position: fixed; right: 20px; bottom: 20px; z-index: 150; display: grid; grid-template-columns: 54px 1fr auto 38px; align-items: center; gap: 14px; padding: 13px; border: 1px solid rgba(199,255,85,.3); border-radius: 20px; background: rgba(8,17,14,.97); box-shadow: 0 24px 70px rgba(0,0,0,.58); backdrop-filter: blur(16px); }
 .install-app[hidden], .app-installed .install-app { display: none; }
 .install-app img { width: 54px; height: 54px; border-radius: 14px; background: rgba(255,255,255,.06); }
@@ -228,6 +232,7 @@ footer { min-height: 180px; margin: 0 clamp(20px,5vw,96px); padding: 44px 0; dis
 .access-detail code { overflow-wrap: anywhere; color: var(--ink); font-size: 12px; }
 .access-change { margin-top: 13px; border-radius: 11px; }
 .access-change[hidden] { display: none; }
+.access-privacy { margin-top: 14px; font-size: 11px; }
 .access-close { width: 40px; height: 40px; position: absolute; top: 10px; right: 10px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; font-size: 24px; cursor: pointer; }
 .access-close[hidden] { display: none; }
 
@@ -238,6 +243,27 @@ footer { min-height: 180px; margin: 0 clamp(20px,5vw,96px); padding: 44px 0; dis
 .back-link:hover { color: var(--ink); }
 .back-link svg { width: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
 .watching-label { justify-self: end; color: var(--muted); font-size: 10px; letter-spacing: .18em; }
+
+/* Halaman kebijakan privasi */
+.privacy-header { grid-template-columns: 1fr auto; border-bottom: 1px solid var(--line); }
+.privacy-back { min-height: 42px; display: inline-flex; align-items: center; padding: 0 15px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 13px; }
+.privacy-back:hover { color: var(--ink); border-color: rgba(199,255,85,.4); }
+.privacy-main { width: min(920px, calc(100% - 40px)); margin: 52px auto 90px; }
+.privacy-intro { padding: clamp(28px, 6vw, 58px); border: 1px solid var(--line); border-radius: 30px; background: linear-gradient(145deg, rgba(16,33,27,.95), rgba(7,16,13,.95)); box-shadow: 0 28px 80px rgba(0,0,0,.28); }
+.privacy-intro h1 { margin: 15px 0 12px; font: 800 clamp(38px, 7vw, 70px)/1 var(--font-display); letter-spacing: -.05em; }
+.privacy-intro p { max-width: 670px; margin: 0 0 16px; color: #c3cec8; line-height: 1.65; }
+.privacy-intro small { color: var(--muted); }
+.privacy-content { display: grid; gap: 14px; margin-top: 22px; }
+.privacy-content section { padding: clamp(22px, 4vw, 34px); border: 1px solid var(--line); border-radius: 22px; background: rgba(11,22,19,.72); }
+.privacy-content h2 { margin: 0 0 13px; font: 700 clamp(19px, 3vw, 24px)/1.25 var(--font-display); }
+.privacy-content p, .privacy-content li { color: #bdc9c2; font-size: 15px; line-height: 1.75; }
+.privacy-content p { margin: 0; }
+.privacy-content p + p { margin-top: 13px; }
+.privacy-content ul { margin: 0; padding-left: 21px; }
+.privacy-content li + li { margin-top: 10px; }
+.privacy-content a { color: var(--lime); text-decoration: underline; text-underline-offset: 4px; }
+.privacy-contact { border-color: rgba(199,255,85,.25) !important; }
+.privacy-contact > a { display: inline-flex; margin-top: 15px; font-weight: 700; }
 .watch-main { width: min(1500px, calc(100% - clamp(24px, 6vw, 100px))); margin: 28px auto 90px; }
 .player-shell { border-radius: 28px; overflow: hidden; border: 1px solid var(--line); background: #020504; box-shadow: 0 40px 100px rgba(0,0,0,.4); }
 .player-frame { position: relative; aspect-ratio: 16/9; display: grid; place-items: center; background: radial-gradient(circle at 50% 50%, #15251f, #020504 65%); }
@@ -451,6 +477,18 @@ select { color: var(--ink); border: 1px solid var(--line); border-radius: 9px; o
   .load-more-wrap { margin: 30px 16px 0; }
   .load-more-wrap .button { width: 100%; min-height: 44px; border-radius: 13px; }
   footer { display: none; }
+  .privacy-header { display: flex; padding-top: 12px; padding-bottom: 12px; }
+  .privacy-header .brand { min-width: 0; }
+  .privacy-header .brand span { overflow: hidden; font-size: 12px; text-overflow: ellipsis; }
+  .privacy-back { min-height: 38px; padding: 0 11px; font-size: 10px; white-space: nowrap; }
+  .privacy-main { width: calc(100% - 20px); margin: 18px auto 48px; }
+  .privacy-intro { padding: 27px 21px; border-radius: 22px; }
+  .privacy-intro h1 { font-size: 35px; }
+  .privacy-content { gap: 10px; margin-top: 12px; }
+  .privacy-content section { padding: 21px 18px; border-radius: 17px; }
+  .privacy-content h2 { font-size: 18px; }
+  .privacy-content p, .privacy-content li { font-size: 13px; line-height: 1.7; }
+  .privacy-footer { min-height: 120px; display: flex; flex-direction: column; gap: 14px; margin-inline: 20px; text-align: center; }
   .install-app { width: calc(100% - 20px); right: 10px; bottom: calc(86px + env(safe-area-inset-bottom)); grid-template-columns: 46px 1fr auto 34px; gap: 9px; padding: 10px; border-radius: 17px; }
   .install-app img { width: 46px; height: 46px; border-radius: 12px; }
   .install-app strong { font-size: 12px; }

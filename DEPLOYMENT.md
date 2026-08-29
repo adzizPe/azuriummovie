@@ -12,6 +12,7 @@ Berkas website yang wajib ikut diperbarui:
 
 - `index.html`
 - `watch.html`
+- `privacy.html`
 - `styles.css`
 - `app.js`
 - `watch.js`
@@ -80,11 +81,13 @@ GitHub.
    katalog sekarang dilindungi.
 2. Buka `https://ozancicak.my.id/manifest.webmanifest` dan pastikan JSON
    manifest muncul, bukan halaman 404.
-3. Buka `https://ozancicak.my.id/.well-known/assetlinks.json` dan pastikan JSON
+3. Buka `https://ozancicak.my.id/privacy.html` dan pastikan kebijakan privasi
+   dapat dibaca tanpa memasukkan token.
+4. Buka `https://ozancicak.my.id/.well-known/assetlinks.json` dan pastikan JSON
    Digital Asset Links muncul tanpa pengalihan.
-4. Buka `https://ozancicak.my.id`, masukkan salah satu token dari daftar privat,
+5. Buka `https://ozancicak.my.id`, masukkan salah satu token dari daftar privat,
    lalu pastikan katalog muncul.
-5. Uji pencarian, halaman detail, pemutar, pilihan resolusi, subtitle, favorit,
+6. Uji pencarian, halaman detail, pemutar, pilihan resolusi, subtitle, favorit,
    riwayat, lanjut menonton, serta pemilih episode.
 
 Jika respons menyebut ekstensi cURL belum aktif, buka **Select PHP Version >
