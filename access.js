@@ -98,6 +98,7 @@
         <span class="eyebrow muted">AKSES PERANGKAT</span>
         <h2 id="accessTitle">Masukkan token</h2>
         <p class="access-copy">Token cukup dimasukkan satu kali dan akan dikenali di perangkat ini.</p>
+        <p class="access-copy"><a href="panduan.html">Baca panduan tontonan tanpa token</a></p>
         <form class="access-form">
           <label for="accessTokenInput">Token akses</label>
           <input id="accessTokenInput" type="password" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4}" maxlength="4" aria-label="Token akses 4 angka" required>

@@ -318,7 +318,6 @@ select { color: var(--ink); border: 1px solid var(--line); border-radius: 9px; o
 .compact-grid { grid-template-columns: repeat(6, minmax(0,1fr)); }
 .live-player-shell { border-color: rgba(56,216,255,.22); }
 .live-toolbar { background: linear-gradient(90deg, rgba(8,28,25,.98), rgba(7,19,17,.98)); }
-.live-download { min-height: 38px; flex: 0 0 auto; padding: 0 13px; border-radius: 11px; font-size: 10px; }
 .live-pill { display: inline-flex; align-items: center; gap: 7px; color: #fff; background: #e93651; }
 .live-pill i { width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px rgba(255,255,255,.15); }
 .live-logo-panel { align-items: center; }
@@ -521,8 +520,7 @@ select { color: var(--ink); border: 1px solid var(--line); border-radius: 9px; o
   .source-status { max-width: 120px; margin-left: 9px; font-size: 8px; }
   .quality-control { gap: 6px; font-size: 10px; }
   .quality-control select { max-width: 88px; padding: 6px 23px 6px 8px; font-size: 11px; }
-  .live-toolbar > div { max-width: calc(100% - 100px); }
-  .live-download { min-height: 36px; padding: 0 9px; font-size: 8px; }
+  .live-toolbar > div { max-width: 100%; }
   .episode-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 10px; }
   .episode-actions button { min-height: 44px; padding: 0 7px; font-size: 10px; }
   .episode-actions #previousEpisode { order: 1; }

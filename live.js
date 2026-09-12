@@ -25,7 +25,6 @@
     favorite: document.querySelector("#liveFavorite"),
     related: document.querySelector("#relatedChannels"),
     relatedSection: document.querySelector("#relatedSection"),
-    download: document.querySelector("#downloadM3u"),
   };
 
   function apiFetch(path, options = {}) {
@@ -215,27 +214,6 @@
     }
   }
 
-  async function downloadPlaylist() {
-    el.download.disabled = true;
-    el.download.textContent = "Menyiapkan...";
-    try {
-      const response = await apiFetch(`${API_BASE}/m3u`, { cache: "no-store" });
-      if (!response.ok) throw new Error("Playlist belum tersedia.");
-      const blobUrl = URL.createObjectURL(await response.blob());
-      const anchor = document.createElement("a");
-      anchor.href = blobUrl;
-      anchor.download = "azuriummovie-tv-indonesia.m3u";
-      anchor.click();
-      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
-    } catch (error) {
-      el.status.textContent = error.message;
-      el.status.dataset.tone = "error";
-    } finally {
-      el.download.disabled = false;
-      el.download.textContent = "Unduh M3U";
-    }
-  }
-
   async function init() {
     screen.orientation?.lock?.("portrait-primary").catch(() => {});
     await window.AzuriumAccess?.ready();
@@ -259,7 +237,6 @@
     updateFavorite();
   });
   el.retry.addEventListener("click", startLive);
-  el.download.addEventListener("click", downloadPlaylist);
   el.video.addEventListener("playing", () => markReady(el.status.textContent || "Siaran langsung terhubung"));
   el.video.addEventListener("waiting", () => { el.status.textContent = "Menstabilkan siaran..."; });
   el.video.addEventListener("error", () => {
@@ -273,4 +250,3 @@
 
   init();
 })();
-

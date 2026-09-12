@@ -17,11 +17,13 @@ Pertahankan nama dan susunan folder seperti di proyek lokal.
 - [ ] `watch.html`
 - [ ] `live.html`
 - [ ] `privacy.html`
+- [ ] `panduan.html` (halaman bacaan publik tanpa token)
 
 ### Tampilan dan JavaScript
 
 - [ ] `styles.css`
 - [ ] `access.js`
+- [ ] `editorial-ads.js` (iklan hanya pada panduan publik yang sudah terisi)
 - [ ] `app.js`
 - [ ] `watch.js`
 - [ ] `live.js`
@@ -36,6 +38,7 @@ terbaru agar nomor versi cache tetap cocok.
 
 - [ ] `manifest.webmanifest`
 - [ ] `ads.txt`
+- [ ] `sitemap.xml`
 - [ ] `.htaccess`
 
 ### Ikon website/PWA
@@ -129,6 +132,7 @@ atau pembatasan percobaan yang sudah lama.
 - [ ] Tidak perlu upload `.api-config.example.php`
 - [ ] Tidak perlu upload `DEPLOYMENT.md`
 - [ ] Tidak perlu upload `CPANEL-CHECKLIST.md`
+- [ ] Jangan upload `CONTENT-RIGHTS.md` atau bukti lisensi privat
 - [ ] Jangan upload file log, `Thumbs.db`, atau `.DS_Store`
 
 ## 4. File ikon yang tidak wajib untuk website
@@ -147,6 +151,10 @@ Mengupload seluruh folder `icons/` tetap aman, tetapi file di atas tidak wajib.
 
 - [ ] `https://ozancicak.my.id/` membuka halaman utama.
 - [ ] `https://ozancicak.my.id/privacy.html` terbuka tanpa token.
+- [ ] `https://ozancicak.my.id/panduan.html` terbuka tanpa token, termasuk saat JavaScript dimatikan.
+- [ ] Tautan panduan tersedia pada layar token; katalog dan koleksi pribadi tetap berfungsi.
+- [ ] Halaman katalog, token, dan pemutar tidak memuat skrip iklan Google.
+- [ ] Periksa izin penayangan dengan bukti dari penyedia sebelum mengajukan ulang; lihat `CONTENT-RIGHTS.md` lokal. Perubahan teknis tidak menjamin persetujuan AdSense.
 - [ ] `https://ozancicak.my.id/manifest.webmanifest` menampilkan JSON.
 - [ ] `https://ozancicak.my.id/ads.txt` menampilkan data publisher.
 - [ ] `https://ozancicak.my.id/.well-known/assetlinks.json` menampilkan JSON tanpa pengalihan.
@@ -155,7 +163,7 @@ Mengupload seluruh folder `icons/` tetap aman, tetapi file di atas tidak wajib.
 - [ ] Pencarian, detail, video, kualitas, subtitle, episode, favorit, riwayat, dan lanjut menonton berfungsi.
 - [ ] Kategori `Donghua` tampil terpisah dan salah satu episodenya dapat diputar.
 - [ ] Kategori `Live TV` menampilkan grup dan channel Indonesia.
-- [ ] Pencarian channel, favorit, riwayat, detail, pemutar live, dan unduhan M3U berfungsi.
+- [ ] Pencarian channel, favorit, riwayat, detail, dan pemutar live berfungsi.
 - [ ] Uji minimal satu channel live; channel yang sedang offline boleh gagal dan harus menampilkan pesan yang jelas.
 - [ ] `https://ozancicak.my.id/.api-config.php` tidak dapat dibuka oleh publik.
 
