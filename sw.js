@@ -1,4 +1,4 @@
-const SHELL_CACHE = "azuriummovie-shell-v17";
+const SHELL_CACHE = "azuriummovie-shell-v18";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "/live.html",
   "/privacy.html",
   "/panduan.html",
+  "/tentang.html",
   "/editorial-ads.js?v=1",
   "/styles.css?v=15",
   "/access.js?v=10",

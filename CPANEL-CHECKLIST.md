@@ -1,5 +1,9 @@
 # Checklist Upload cPanel azuriummovie
 
+Pembaruan 22 Oktober 2026: baca `UPLOAD-PERBAIKAN-ADSENSE.md` untuk langkah lengkap.
+Tambahkan `tentang.html` dan `robots.txt` ke upload. `.htaccess` terbaru membuka
+panduan publik sebagai beranda; katalog tetap tersedia di `/index.html`.
+
 Dokumen ini menjadi daftar utama setiap kali website diperbarui. Upload ke
 **document root** domain `ozancicak.my.id` (biasanya `public_html`, tetapi ikuti
 document root yang terlihat di menu Domains cPanel).
